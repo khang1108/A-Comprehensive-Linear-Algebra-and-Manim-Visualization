@@ -60,9 +60,79 @@ def gaussian_eliminate(A : List[List[float]], b : List[float]) -> List[float]:
 def back_substitution(U: List[List[float]], c: List[float]) -> Any:
     pass
 
-#TODO: Implement determinant(A)
-def determinant(A: List[List[float]]) -> int:
-    pass
+def determinant(A: List[List[float]]) -> float:
+    """
+    Compute det(A) using Gaussian Elimination with Partial Pivoting.
+
+    Algorithm:
+        Step 1: Validate that A is a square matrix (n × n).
+        Step 2: Create a copy of A to preserve the original data.
+        Step 3: Apply Gaussian Elimination with partial pivoting
+                 to reduce A to upper triangular form U.
+                 - At each step k, select the row with the largest
+                   |element| in column k (from row k downward) as pivot.
+                 - Each row swap flips the sign of the determinant.
+                 - Eliminate elements below the pivot via row subtraction.
+        Step 4: Compute det(A) using the formula (Equation 3):
+                 det(A) = (-1)^s × ∏(i=1→n) u_ii
+                 where s = number of row swaps, u_ii = diagonal of U.
+
+    Parameters:
+        A (List[List[float]]): A square n × n matrix (numpy array or list of lists).
+
+    Returns:
+        float: The determinant det(A). Returns 0.0 if A is singular.
+
+    Raises:
+        ValueError: If A is not a square matrix.
+    """
+
+    # Step 1: Input validation — must be square
+    A = np.array(A, dtype=float)
+    n_rows, n_cols = A.shape
+
+    if n_rows != n_cols:
+        raise ValueError(
+            f"Matrix must be square to compute determinant. "
+            f"Got {n_rows}×{n_cols}."
+        )
+
+    n = n_rows
+
+    # Step 2: Copy to avoid mutating the original
+    mat = A.copy()
+
+    # Step 3: Gaussian Elimination with Partial Pivoting
+    s = 0  # Row swap counter (each swap flips det sign)
+
+    for k in range(n):
+        # Step 3a: Find pivot — row with max |element| in column k
+        pivot_row = k
+        for i in range(k + 1, n):
+            if abs(mat[i, k]) > abs(mat[pivot_row, k]):
+                pivot_row = i
+
+        # Step 3b: Singular check — pivot is zero
+        if abs(mat[pivot_row, k]) == 0:
+            return 0.0
+
+        # Step 3c: Swap rows if needed (flips det sign)
+        if pivot_row != k:
+            mat[[k, pivot_row]] = mat[[pivot_row, k]]
+            s += 1
+
+        # Step 3d: Eliminate entries below pivot
+        for i in range(k + 1, n):
+            factor = mat[i, k] / mat[k, k]
+            mat[i, k:] = mat[i, k:] - factor * mat[k, k:]  # R_i ← R_i - factor × R_k
+
+    # Step 4: det(A) = (-1)^s × product of diagonal entries of U
+    diagonal_product = 1.0
+    for i in range(n):
+        diagonal_product *= mat[i, i]
+
+    det_value = ((-1) ** s) * diagonal_product
+    return det_value
 
 #TODO: inverse(A)
 def inverse(A: List[List[float]]) -> List[List[float]]:
@@ -82,5 +152,22 @@ if __name__ == "__main__":
     ])
 
     b = np.array([5.0, -2.0])
-    
+
     print(gaussian_eliminate(A, b))
+
+    # Test determinant
+    # Test 1: 2x2 basic
+    B = np.array([[2.0,  1.0],
+                  [4.0, -6.0]])
+    print(determinant(B))
+
+    # Test 2: 3x3 singular — linearly dependent rows
+    C = np.array([[1.0, 2.0, 3.0],
+                  [4.0, 5.0, 6.0],
+                  [7.0, 8.0, 9.0]])
+    print(determinant(C))
+
+    # Test 3: 2x2 — pivot swap needed since a[0,0] = 0
+    D = np.array([[0.0, 1.0],
+                  [1.0, 0.0]])
+    print(determinant(D))

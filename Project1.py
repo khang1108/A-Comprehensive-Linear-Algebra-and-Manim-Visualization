@@ -69,9 +69,48 @@ def inverse(A: List[List[float]]) -> List[List[float]]:
     pass
 
 #TODO: rank_and_basis(A)
-def rank_and_basis(A: List[List[float]]) -> Any:
-    pass
+def transpose (A: List[List[float]]) -> List[List[float]]:
+    n_rows = len(A)
+    n_cols = len(A[0])
+    return [[A[j][i] for j in range(n_rows)] for i in range(n_cols)]
 
+def get_row_echelon(A):
+    mat = [row[:] for row in A]
+    n_rows = len(mat)
+    n_cols = len(mat[0])
+    r = 0
+    for c in range(n_cols):
+        if r >= n_rows: break
+        
+        pivot = r
+        for i in range(r + 1, n_rows):
+            if abs(mat[i][c]) > abs(mat[pivot][c]):
+                pivot = i
+        
+        if abs(mat[pivot][c]) < 1e-9: continue
+        
+        mat[r], mat[pivot] = mat[pivot], mat[r]
+
+        for i in range(r + 1, n_rows):
+            mul = mat[i][c] / mat[r][c]
+            for j in range(c, n_cols):
+                mat[i][j] -= mul * mat[r][j]
+        r += 1
+    return mat, r
+def rank_and_basis(A: List[List[float]]) -> Any:
+    ref_A, rank = get_row_echelon(A)
+    row_basis = ref_A[:rank]
+    
+    AT = transpose(A)
+    ref_AT, _ = get_row_echelon(AT)
+    
+    col_basis = ref_AT[:rank]
+    
+    return {
+        "rank": rank,
+        "row_basis": row_basis,
+        "col_basis": col_basis
+    }
 #TODO: verify_solution(A, x, b)
 
 
@@ -84,3 +123,5 @@ if __name__ == "__main__":
     b = np.array([5.0, -2.0])
     
     print(gaussian_eliminate(A, b))
+    print("-----------------------------")
+    print(rank_and_basis(A))

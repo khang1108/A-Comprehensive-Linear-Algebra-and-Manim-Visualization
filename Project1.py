@@ -66,7 +66,41 @@ def determinant(A: List[List[float]]) -> int:
 
 #TODO: inverse(A)
 def inverse(A: List[List[float]]) -> List[List[float]]:
-    pass
+    n = len(A)
+
+    # Check if the matrix is square
+    for row in A:
+        if len(row) != n:
+            raise ValueError("Matrix must be square")
+
+    # Initialize the inverse matrix
+    inv = [[0.0] * n for _ in range(n)]
+
+    for i in range(n):
+        # Create the unit vector e_i
+        e = [0.0] * n
+        e[i] = 1.0
+
+        # Copy A because gaussian_eliminate may modify it
+        A_copy = [row[:] for row in A]
+
+        # Apply Gaussian elimination to the augmented system (A | e_i)
+        mat = gaussian_eliminate(np.array(A_copy, dtype=float),
+                                 np.array(e, dtype=float))
+
+        # Convert result to list and separate U and c
+        mat = mat.tolist()
+        U = [row[:n] for row in mat]   # Upper triangular matrix
+        c = [row[n] for row in mat]    # Right-hand side vector
+
+        # Solve Ux = c using back substitution
+        x = back_substitution(U, c)
+
+        # Assign solution as the i-th column of the inverse matrix
+        for j in range(n):
+            inv[j][i] = x[j]
+
+    return inv
 
 #TODO: rank_and_basis(A)
 def rank_and_basis(A: List[List[float]]) -> Any:

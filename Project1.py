@@ -51,7 +51,7 @@ def gaussian_eliminate(A : List[List[float]], b : List[float]) -> List[float]:
                 continue
             mul = mat[k, i] / mat[i, i]
 
-            # Update i-th row to eliminate the i-th column
+            # update i-th row to eliminate the i-th column
             mat[k, i:] = mat[k, i:] - mul * mat[i, i:]
     
     return mat
@@ -117,4 +117,4 @@ if __name__ == "__main__":
 
     b = np.array([5.0, -2.0])
     
-    print(gaussian_eliminate(A, b))
+    print(inverse(A))

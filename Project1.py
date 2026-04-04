@@ -68,37 +68,47 @@ def determinant(A: List[List[float]]) -> int:
 def inverse(A: List[List[float]]) -> List[List[float]]:
     n = len(A)
 
-    # Check if the matrix is square
+    # 1. Check if the matrix is square
     for row in A:
         if len(row) != n:
-            raise ValueError("Matrix must be square")
+            raise ValueError("Matrix must be square (n x n).")
 
-    # Initialize the inverse matrix
+    # 2. Check if the matrix is singular (non-invertible)
+    # Using numpy's determinant check for robustness
+    if np.isclose(np.linalg.det(np.array(A)), 0):
+        raise ValueError("Matrix is singular and cannot be inverted (determinant is zero).")
+
+    # 3. Initialize the inverse matrix with zeros
     inv = [[0.0] * n for _ in range(n)]
 
     for i in range(n):
-        # Create the unit vector e_i
+        # Create the i-th unit vector e_i
         e = [0.0] * n
         e[i] = 1.0
 
-        # Copy A because gaussian_eliminate may modify it
+        # Copy A to avoid modifying the original data during Gaussian elimination
         A_copy = [row[:] for row in A]
 
-        # Apply Gaussian elimination to the augmented system (A | e_i)
-        mat = gaussian_eliminate(np.array(A_copy, dtype=float),
-                                 np.array(e, dtype=float))
+        try:
+            # 4. Apply Gaussian elimination to the augmented system (A | e_i)
+            # Ensure input to your function is consistent (numpy arrays)
+            mat = gaussian_eliminate(np.array(A_copy, dtype=float), 
+                                     np.array(e, dtype=float))
 
-        # Convert result to list and separate U and c
-        mat = mat.tolist()
-        U = [row[:n] for row in mat]   # Upper triangular matrix
-        c = [row[n] for row in mat]    # Right-hand side vector
+            # 5. Separate U and c from the result [U | c]
+            mat_list = mat.tolist()
+            U = [row[:n] for row in mat_list]   # Upper triangular part
+            c = [row[n] for row in mat_list]    # Transformed right-hand side
 
-        # Solve Ux = c using back substitution
-        x = back_substitution(U, c)
+            # 6. Solve Ux = c using back substitution
+            x = back_substitution(U, c)
 
-        # Assign solution as the i-th column of the inverse matrix
-        for j in range(n):
-            inv[j][i] = x[j]
+            # 7. Assign the solution x as the i-th column of the inverse matrix
+            for j in range(n):
+                inv[j][i] = x[j]
+        
+        except ZeroDivisionError:
+            raise ValueError("Zero pivot encountered during Gaussian elimination. Matrix is not invertible.")
 
     return inv
 

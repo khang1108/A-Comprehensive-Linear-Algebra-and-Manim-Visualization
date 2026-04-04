@@ -132,8 +132,40 @@ def back_substitution(U: List[List[float]], c: List[float]) -> Any:
 
 
 # TODO: inverse(A)
-def inverse(A: List[List[float]]):
-    pass
+def inverse(A: List[List[float]]) -> List[List[float]]:
+    n, m = len(A), len(A[0])
+
+    # Check if the matrix is square
+    if n != m:
+        raise ValueError("The matrix must be squared")
+    if determinant(A) == 0.0:
+        raise ValueError("Determinant equals to 0")
+
+    # Initialize the inverse matrix
+    inv = [[0.0] * n for _ in range(n)]
+
+    for i in range(n):
+        # Create the unit vector e_i
+        e = [0.0] * n
+        e[i] = 1.0
+
+        # Copy A because gaussian_eliminate may modify it
+        A_copy = copy.deepcopy(A)
+
+        # Apply Gaussian elimination to the augmented system (A | e_i)
+        mat = gaussian_eliminate(A_copy, e)
+
+        # Convert result to list and separate U and c
+        U, c, _ = mat
+
+        # Solve Ux = c using back substitution
+        x, _ = back_substitution(U, c)
+
+        # Assign solution as the i-th column of the inverse matrix
+        for j in range(n):
+            inv[j][i] = x[j]
+
+    return inv
 
 
 def determinant(A: List[List[float]]) -> float:
@@ -190,10 +222,7 @@ def rank_and_basis(A: List[List[float]]) -> Any:
 
 if __name__ == "__main__":
     A = [[2.0, 1.0], [4.0, -6.0]]
-    b = [
-        5.0,
-        -2.0,
-    ]  # 1. Chạy code của bạn     U, c, n_swaps = gaussian_eliminate(A_list, b_list)     x_sol, message = back_substitution(U, c)      print("-" * 30)     print(f"My result: {x_sol}")     print(f"Message: {message}")     print(f"Swaps: {n_swaps}")      # 2. Thử nghiệm với thư viện (Sử dụng try-except vì ma trận suy biến)     try:         x_correct = la.solve(np.array(A_list), np.array(b_list))         print(f"Library solution: {x_correct}")                  # Kiểm tra Ax = b cho nghiệm duy nhất         b_check = np.dot(np.array(A_list), np.array(x_sol))         is_correct = np.allclose(b_check, np.array(b_list), atol=1e-10)         print(f"Status: {'Correct' if is_correct else 'Incorrect'}")              except la.LinAlgError:         print("Library Result: Matrix is singular (No unique solution)")                  # Kiểm tra logic của bạn có nhận diện đúng không         # Với case [1,1],[2,2] và b=[2,5] -> Phải là No Solution         if message == "No Solution":             print("Status: ✅ Correctly identified No Solution")         elif message == "Infinitely many solutions":             print("Status: ❌ Wrong! This system is inconsistent (No Solution)")         else:             print("Status: ❌ Failed to identify singular matrix")      except Exception as e:         print(f"An error occurred: {e}")# 1. Chạy code của bạn     U, c, n_swaps = gaussian_eliminate(A_list, b_list)     x_sol, message = back_substitution(U, c)      print("-" * 30)     print(f"My result: {x_sol}")     print(f"Message: {message}")     print(f"Swaps: {n_swaps}")      # 2. Thử nghiệm với thư viện (Sử dụng try-except vì ma trận suy biến)     try:         x_correct = la.solve(np.array(A_list), np.array(b_list))         print(f"Library solution: {x_correct}")                  # Kiểm tra Ax = b cho nghiệm duy nhất         b_check = np.dot(np.array(A_list), np.array(x_sol))         is_correct = np.allclose(b_check, np.array(b_list), atol=1e-10)         print(f"Status: {'Correct' if is_correct else 'Incorrect'}")              except la.LinAlgError:         print("Library Result: Matrix is singular (No unique solution)")                  # Kiểm tra logic của bạn có nhận diện đúng không         # Với case [1,1],[2,2] và b=[2,5] -> Phải là No Solution         if message == "No Solution":             print("Status: ✅ Correctly identified No Solution")         elif message == "Infinitely many solutions":             print("Status: ❌ Wrong! This system is inconsistent (No Solution)")         else:             print("Status: ❌ Failed to identify singular matrix")      except Exception as e:         print(f"An error occurred: {e}"
+    b = [5.0, -2.0]
     # 1. Chạy code của bạn
     U, c, n_swaps = gaussian_eliminate(A, b)
     x_sol, message = back_substitution(U, c)
@@ -237,3 +266,11 @@ if __name__ == "__main__":
         print(f"Correct solution: {det_correct}")
     except ValueError:
         print("Matrix must be squared matrix")
+
+    try:
+        inv = inverse(A)
+        print(f"My Result: {inv}")
+
+        print(f"Correct Result: {la.inv(np.array(A))}")
+    except ValueError:
+        print("Some errors occurred")

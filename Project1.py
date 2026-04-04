@@ -1,9 +1,13 @@
 from typing import Any, List
+from scipy import linalg as la
 
+import copy
 import numpy as np
 
 
-def gaussian_eliminate(A: np.ndarray, b: np.ndarray):
+def gaussian_eliminate(
+    A: List[List[float]], b: List[float] = [], only_one: bool = False
+):
     """
     Reducing rows in a matrix by Gaussian Eliminate Algortihm.
 
@@ -17,12 +21,22 @@ def gaussian_eliminate(A: np.ndarray, b: np.ndarray):
     """
 
     # (A|B) = A.concat(B, axis=1)
-    # In this step, I reshape Vector B into a column vector 1 x m
+    # In this step, I reshape Vector B into a column vector m x 1
     # Then I concatenate A and B to form a new matrix (A|B)
-    b = b.reshape(-1, 1)
-    mat = np.concatenate((A, b), axis=1)
+    n_rows, n_cols = len(A), len(A[0])
+    if not only_one:
+        b_new = []
+        for x in b:
+            b_new.append(x)
+        b = b_new
+        n_cols += 1
 
-    n_rows = mat.shape[0]
+        mat = []
+        for i in range(n_rows):
+            new_row = A[i] + [b[i]]
+            mat.append(new_row)
+    else:
+        mat = copy.deepcopy(A)
 
     """
     Partial Gaussian Elimination:
@@ -37,37 +51,48 @@ def gaussian_eliminate(A: np.ndarray, b: np.ndarray):
         - Back-substitue to obtain the values of the unknowns
     """
 
-    for i in range(n_rows):
+    n_swap = 0
+    for i in range(min(n_rows, n_cols)):
         pivot_row = i
 
         for j in range(i + 1, n_rows):
-            if abs(mat[j, i]) > abs(mat[pivot_row, i]):
+            if abs(mat[j][i]) > abs(mat[pivot_row][i]):
                 pivot_row = j
         # Swap the pivot row with the first row
-        mat[[i, pivot_row]] = mat[[pivot_row, i]]
+        if i != pivot_row:
+            mat[i], mat[pivot_row] = mat[pivot_row], mat[i]
+            n_swap += 1
 
-        if mat[i, i] == 0:
+        if abs(mat[i][i]) < 1e-12:
             # Skip the row if the pivot element is 0
             continue
 
-        for k in range(i + 1, n_rows):
-            mul = mat[k, i] / mat[i, i]
+        for j in range(i + 1, n_rows):
+            mul = mat[j][i] / mat[i][i]
 
             # Update i-th row to eliminate the i-th column
-            mat[k, i:] = mat[k, i:] - mul * mat[i, i:]
+            for k in range(i, n_cols):
+                mat[j][k] -= mul * mat[i][k]
 
-    return mat[:, :-1], mat[:, -1]
+    if only_one:
+        U = mat
+        c = []
+    else:
+        U = [row[: n_cols - 1] for row in mat]
+        c = [row[n_cols - 1] for row in mat]
+
+    return U, c, n_swap
 
 
 # TODO: Implement back_substitution(U, c)
-def back_substitution(U: np.ndarray, c: np.ndarray) -> Any:
+def back_substitution(U: List[List[float]], c: List[float]) -> Any:
     """
     Solving the linear system Ux = c by Back Substitution Algorithm.
     Handles unique solution, no solution, and infinitely many solutions.
 
     Parameters:
-        - U (np.ndarray): An upper triangular matrix m x n
-        - c (np.ndarray): A vector
+        - U (List[List[float]]): An upper triangular matrix m x n
+        - c (List[float]): A vector
 
     Returns:
         - List[float]: If there is a unique solution.
@@ -77,9 +102,9 @@ def back_substitution(U: np.ndarray, c: np.ndarray) -> Any:
     # In this step, I use an (n x n+1) matrix to store the general solution formula.
     # Column 0 stores the constant term.
     # Column 1 to n stores the coefficients of the free variables x_0 to x_{n-1}.
-    n = U.shape[0]
+    n_rows, n_cols = len(U), len(U[0])
 
-    x = np.zeros(n, dtype=float)
+    x = [0.0] * n_cols
     """
     Back Substitution with General Solution Handling:
         - Iterate BACKWARDS from the LAST row down to the FIRST row
@@ -88,21 +113,22 @@ def back_substitution(U: np.ndarray, c: np.ndarray) -> Any:
         - Otherwise, CALCULATE the symbolic expression using array arithmetic
     """
 
-    for i in range(n - 1, -1, -1):
+    for i in range(n_rows - 1, -1, -1):
         # Calculate sum of U[i][j] * x_expr[j] for known variables
-        sum_ux = 0.0
+        sum = 0.0
 
-        for j in range(i + 1, n):
-            sum_ux += U[i, j] * x[j]
+        for j in range(i + 1, n_cols):
+            sum += U[i][j] * x[j]
 
-        x[i] = (c[i] - sum_ux) / U[i, i]
+        if abs(U[i][i]) < 1e-12:
+            if abs(c[i] - sum) > 1e-12:
+                return [], "No Solution"
+            else:
+                return [], "Infinitively many solutions"
 
-    return x
+        x[i] = (c[i] - sum) / U[i][i]
 
-
-# TODO: Implement determinant(A)
-def determinant(A: List[List[float]]):
-    pass
+    return x, "Singular Solution"
 
 
 # TODO: inverse(A)
@@ -110,19 +136,101 @@ def inverse(A: List[List[float]]):
     pass
 
 
+def determinant(A: List[List[float]]) -> float:
+    """
+    Compute det(A) using Gaussian Elimination with Partial Pivoting.
+
+    Algorithm:
+        Step 1: Validate that A is a square matrix (n × n).
+        Step 2: Create a copy of A to preserve the original data.
+        Step 3: Apply Gaussian Elimination with partial pivoting
+                 to reduce A to upper triangular form U.
+                 - At each step k, select the row with the largest
+                   |element| in column k (from row k downward) as pivot.
+                 - Each row swap flips the sign of the determinant.
+                 - Eliminate elements below the pivot via row subtraction.
+        Step 4: Compute det(A) using the formula (Equation 3):
+                 det(A) = (-1)^s × ∏(i=1→n) u_ii
+                 where s = number of row swaps, u_ii = diagonal of U.
+
+    Parameters:
+        A (List[List[float]]): A square n × n matrix (numpy array or list of lists).
+
+    Returns:
+        float: The determinant det(A). Returns 0.0 if A is singular.
+
+    Raises:
+        ValueError: If A is not a square matrix.
+    """
+
+    A_copy = copy.deepcopy(A)
+    n_rows, n_cols = len(A), len(A[0])
+
+    if n_rows != n_cols:
+        raise ValueError(
+            f"Matrix must be square to compute determinant. Got {n_rows}×{n_cols}."
+        )
+
+    n = n_rows
+
+    U, _, n_swaps = gaussian_eliminate(A_copy, only_one=True)
+
+    det = 1.0
+    for i in range(n):
+        det *= U[i][i]
+    det *= (-1) ** n_swaps
+
+    return det
+
+
 # TODO: rank_and_basis(A)
 def rank_and_basis(A: List[List[float]]) -> Any:
     pass
 
 
-# TODO: verify_solution(A, x, b)
-
-
 if __name__ == "__main__":
-    A = np.array([[2.0, 1.0], [4.0, -6.0]])
+    A = [[2.0, 1.0], [4.0, -6.0]]
+    b = [5.0, -2.0]
+    # 1. Chạy code của bạn
+    U, c, n_swaps = gaussian_eliminate(A, b)
+    x_sol, message = back_substitution(U, c)
 
-    b = np.array([5.0, -2.0])
+    print("-" * 30)
+    print(f"My result: {x_sol}")
+    print(f"Message: {message}")
+    print(f"Swaps: {n_swaps}")
 
-    U, c = gaussian_eliminate(A, b)
-    print(back_substitution(U, c))
+    # 2. Thử nghiệm với thư viện (Sử dụng try-except vì ma trận suy biến)
+    try:
+        x_correct = la.solve(np.array(A), np.array(b))
+        print(f"Library solution: {x_correct}")
 
+        # Kiểm tra Ax = b cho nghiệm duy nhất
+        b_check = np.dot(np.array(A), np.array(x_sol))
+        is_correct = np.allclose(b_check, np.array(b), atol=1e-10)
+        print(f"Status: {'Correct' if is_correct else 'Incorrect'}")
+
+    except la.LinAlgError:
+        print("Library Result: Matrix is singular (No unique solution)")
+
+        # Kiểm tra logic của bạn có nhận diện đúng không
+        # Với case [1,1],[2,2] và b=[2,5] -> Phải là No Solution
+        if message == "No Solution":
+            print("Correctly identified No Solution")
+        elif message == "Infinitely many solutions":
+            print("Wrong! This system is inconsistent (No Solution)")
+        else:
+            print("Failed to identify singular matrix")
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+    try:
+        det_manually = determinant(A)
+
+        det_correct = la.det(np.array(A))
+
+        print(f"My result: {det_manually}")
+        print(f"Correct solution: {det_correct}")
+    except ValueError:
+        print("Matrix must be squared matrix")

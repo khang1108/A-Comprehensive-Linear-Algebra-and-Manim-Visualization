@@ -1,0 +1,3 @@
+# Manim Community — render video trong thư mục manim/
+# pip install -r requirements-manim.txt
+manim>=0.18.0,<0.21

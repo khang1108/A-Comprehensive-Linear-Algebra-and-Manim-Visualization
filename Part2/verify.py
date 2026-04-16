@@ -91,6 +91,7 @@ def verify_svd(
 
 
 if __name__ == "__main__":
+    # PHẦN DƯỚI NÀY CÓ THỂ BỎ ĐI 
     # Test case 1: Ma trận vuông
     A_square = [[12.0, -51.0, 4.0], [6.0, 167.0, -68.0], [-4.0, 24.0, -41.0]]
     A_np = np.array(A_square)

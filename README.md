@@ -3,12 +3,14 @@
 
 Đây là mã nguồn và báo cáo chính thức cho Đồ án 1 của môn học. Đồ án tập trung vào việc tự cài đặt (from scratch) các phương pháp nền tảng của Đại số tuyến tính tính toán (Phép khử Gauss, Phân rã QR, Phân rã SVD) và đánh giá hiệu năng/độ ổn định của chúng trên thực tế.
 
-##Thông Tin Nhóm
+Link Repo: [https://github.com/khang1108/A-Comprehensive-Linear-Algebra-and-Manim-Visualization](https://github.com/khang1108/A-Comprehensive-Linear-Algebra-and-Manim-Visualization)
+
+## Thông Tin Nhóm
 - **Khang Phuc Nguyen** (24120068) - *Leader*
 - **Nghia Trong Hoang** (24120103)
 - **Nhat Hoang Mai** (24120109)
-- **Nhat Hoang Nguyen** (24120100)
-- **Long Nhat Phung Vo** (2412088)
+- **Nhat Hoang Nguyen** (24120110)
+- **Long Nhat Phung Vo** (24120088)
 
 ---
 

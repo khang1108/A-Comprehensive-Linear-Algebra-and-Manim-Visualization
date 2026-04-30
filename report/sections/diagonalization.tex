@@ -1,0 +1,144 @@
+\subsection{Chéo Hóa Ma Trận \- Matrix Diagonalization}
+
+\subsubsection{Cơ Sở Lý Thuyết}
+
+\subsubsubsection{Giá Trị Riêng và Vectơ Riêng}
+
+\begin{mydef}{Giá trị riêng và Vectơ riêng}{eigen_def}
+Cho ma trận vuông $\mat{A} \in \R^{n \times n}$. Một số vô hướng $\lambda \in \C$ được gọi là \textbf{giá trị riêng} (\textit{eigenvalue}) của $\mat{A}$ nếu tồn tại một vectơ khác không $\mat{v} \in \C^n$ sao cho:
+\begin{equation}
+    \mat{A}\mat{v} = \lambda\mat{v}
+    \label{eq:eigen}
+\end{equation}
+Khi đó, $\mat{v}$ được gọi là \textbf{vectơ riêng} (\textit{eigenvector}) của $\mat{A}$ ứng với giá trị riêng $\lambda$.
+\end{mydef}
+
+Phương trình \eqref{eq:eigen} có thể được viết lại dưới dạng thuần nhất: $(\mat{A} - \lambda\mat{I})\mat{v} = \mat{0}$. Để hệ này có nghiệm $\mat{v} \neq \mat{0}$, ma trận hệ số phải suy biến, tức là:
+\begin{equation}
+    \det(\mat{A} - \lambda\mat{I}) = 0
+\end{equation}
+Đây được gọi là \textbf{phương trình đặc trưng} của ma trận $\mat{A}$. Khai triển định thức này, ta thu được một đa thức bậc $n$ theo $\lambda$, gọi là đa thức đặc trưng $p(\lambda)$. Các nghiệm của $p(\lambda) = 0$ chính là các giá trị riêng của $\mat{A}$.
+
+\subsubsubsection{Định Nghĩa và Điều Kiện Chéo Hóa}
+
+\begin{mydef}{Ma trận chéo hóa được}{diag_def}
+Ma trận $\mat{A} \in \R^{n \times n}$ được gọi là \textbf{chéo hóa được} (\textit{diagonalizable}) nếu tồn tại một ma trận khả nghịch $\mat{P} \in \C^{n \times n}$ và một ma trận đường chéo $\mat{D} \in \C^{n \times n}$ sao cho:
+\begin{equation}
+    \mat{A} = \mat{P}\mat{D}\mat{P}^{-1} \quad \text{hay} \quad \mat{P}^{-1}\mat{A}\mat{P} = \mat{D}
+\end{equation}
+\end{mydef}
+
+\begin{mythm}{Điều kiện cần và đủ để chéo hóa}{diag_thm}
+Ma trận $\mat{A} \in \R^{n \times n}$ chéo hóa được khi và chỉ khi nó có đúng $n$ vectơ riêng độc lập tuyến tính.
+\end{mythm}
+
+\begin{proof}
+Giả sử $\mat{A}$ có $n$ vectơ riêng độc lập tuyến tính $\mat{v}_1, \mat{v}_2, \ldots, \mat{v}_n$ ứng với các giá trị riêng $\lambda_1, \lambda_2, \ldots, \lambda_n$. Đặt $\mat{P} = [\mat{v}_1 \mid \mat{v}_2 \mid \cdots \mid \mat{v}_n]$. Vì các cột của $\mat{P}$ độc lập tuyến tính nên $\mat{P}$ khả nghịch. Ta xét tích $\mat{A}\mat{P}$:
+\begin{align*}
+    \mat{A}\mat{P} &= \mat{A}[\mat{v}_1 \mid \mat{v}_2 \mid \cdots \mid \mat{v}_n] \\
+    &= [\mat{A}\mat{v}_1 \mid \mat{A}\mat{v}_2 \mid \cdots \mid \mat{A}\mat{v}_n] \\
+    &= [\lambda_1\mat{v}_1 \mid \lambda_2\mat{v}_2 \mid \cdots \mid \lambda_n\mat{v}_n] \\
+    &= [\mat{v}_1 \mid \mat{v}_2 \mid \cdots \mid \mat{v}_n] 
+    \begin{pmatrix}
+        \lambda_1 & 0 & \cdots & 0 \\
+        0 & \lambda_2 & \cdots & 0 \\
+        \vdots & \vdots & \ddots & \vdots \\
+        0 & 0 & \cdots & \lambda_n
+    \end{pmatrix} \\
+    &= \mat{P}\mat{D}
+\end{align*}
+Nhân hai vế với $\mat{P}^{-1}$ từ bên phải, ta thu được $\mat{A} = \mat{P}\mat{D}\mat{P}^{-1}$. Quá trình ngược lại cũng dễ dàng chứng minh.
+\end{proof}
+
+Một hệ quả quan trọng là nếu $\mat{A}$ có $n$ giá trị riêng \emph{phân biệt}, thì các vectơ riêng tương ứng với chúng chắc chắn độc lập tuyến tính, do đó $\mat{A}$ luôn chéo hóa được~\cite{strang2023}.
+
+\subsubsection{Ý Nghĩa Hình Học}
+
+Về mặt hình học, việc nhân một vectơ $\mat{x}$ với ma trận $\mat{A}$ thể hiện một phép biến đổi tuyến tính. Phép biến đổi này có thể rất phức tạp (bao gồm quay, co giãn, trượt). Tuy nhiên, nếu ta nhìn phép biến đổi này thông qua hệ quy chiếu là các \textbf{vectơ riêng} của nó, mọi thứ trở nên vô cùng đơn giản: phép biến đổi $\mat{A}$ chỉ đơn thuần là sự \textbf{co/giãn} dọc theo các trục là các vectơ riêng.
+
+Quá trình $\mat{A}\mat{x} = \mat{P}\mat{D}\mat{P}^{-1}\mat{x}$ có thể phân tích thành 3 bước:
+\begin{enumerate}[noitemsep]
+    \item $\mat{P}^{-1}\mat{x}$: Chiếu vectơ $\mat{x}$ vào hệ cơ sở mới được tạo bởi các vectơ riêng.
+    \item $\mat{D}(\mat{P}^{-1}\mat{x})$: Thực hiện phép co/giãn độc lập trên từng trục tọa độ mới với hệ số là các giá trị riêng $\lambda_i$.
+    \item $\mat{P}(\mat{D}\mat{P}^{-1}\mat{x})$: Chuyển kết quả trở lại hệ tọa độ chuẩn ban đầu.
+\end{enumerate}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=1.5, >=Stealth]
+  % Lưới tọa độ
+  \draw[gray!20, thin, step=1] (-1.5,-1.5) grid (3.5,3.5);
+  \draw[->, thick] (-1.5,0) -- (3.5,0) node[right] {$x$};
+  \draw[->, thick] (0,-1.5) -- (0,3.5) node[above] {$y$};
+
+  % Vectơ riêng v1 và A*v1 (giãn)
+  \draw[->, very thick, primaryblue] (0,0) -- (1.5,0.5) node[below right] {$\mat{v}_1$};
+  \draw[->, very thick, primaryblue, dashed] (0,0) -- (3,1) node[right] {$\mat{A}\mat{v}_1 = \lambda_1\mat{v}_1$};
+  \node[primaryblue, font=\footnotesize] at (2.2, 0.4) {$(\lambda_1 = 2)$};
+
+  % Vectơ riêng v2 và A*v2 (co)
+  \draw[->, very thick, accentblue] (0,0) -- (-0.5, 1.5) node[left] {$\mat{v}_2$};
+  \draw[->, very thick, accentblue, dashed] (0,0) -- (-0.25, 0.75) node[below left] {$\mat{A}\mat{v}_2 = \lambda_2\mat{v}_2$};
+  \node[accentblue, font=\footnotesize] at (-0.6, 1.0) {$(\lambda_2 = 0.5)$};
+
+  % Vectơ x bất kỳ và A*x
+  \draw[->, thick, darkgray] (0,0) -- (1, 2) node[above] {$\mat{x} = \mat{v}_1 + \mat{v}_2$};
+  \draw[->, thick, warnorange, dashed] (0,0) -- (2.75, 1.75) node[above right] {$\mat{A}\mat{x}$};
+  
+  % Đường nét đứt gióng tọa độ của x và Ax
+  \draw[gray, dotted, thick] (1.5, 0.5) -- (1, 2) -- (-0.5, 1.5);
+  \draw[warnorange!50, dotted, thick] (3, 1) -- (2.75, 1.75) -- (-0.25, 0.75);
+
+\end{tikzpicture}
+\caption{Minh họa hình học của Chéo hóa ma trận: Hệ trục tọa độ mới được định hình bởi hai vectơ riêng $\mat{v}_1$ (màu \textcolor{primaryblue}{xanh đậm}) và $\mat{v}_2$ (màu \textcolor{accentblue}{xanh nhạt}). Phép biến đổi $\mat{A}$ chỉ đơn thuần giãn $\mat{v}_1$ ra 2 lần ($\lambda_1 = 2$) và co $\mat{v}_2$ lại một nửa ($\lambda_2 = 0.5$). Vectơ $\mat{x}$ (\textcolor{darkgray}{xám}) được tính toán dễ dàng trong hệ trục mới này để cho ra $\mat{A}\mat{x}$ (\textcolor{warnorange}{cam}).}
+\label{fig:diagonalization_geometry}
+\end{figure}
+
+\subsubsection{Thuật Toán Chéo Hóa}
+
+Thuật toán chéo hóa một ma trận $\mat{A} \in \R^{n \times n}$ (nếu có thể) được thực hiện qua các bước sau:
+
+\begin{tcolorbox}[enhanced, colback=blue!8!white, colframe=primaryblue,
+    title=\textbf{Quy trình chéo hóa ma trận}, fonttitle=\bfseries]
+\begin{enumerate}
+    \item \textbf{Bước 1: Tính đa thức đặc trưng và tìm giá trị riêng.} \\
+    Giải phương trình $\det(\mat{A} - \lambda\mat{I}) = 0$ để tìm các giá trị riêng $\lambda_1, \lambda_2, \ldots, \lambda_k$ và xác định \textit{bội số đại số} (algebraic multiplicity) của từng giá trị riêng.
+    
+    \item \textbf{Bước 2: Tìm cơ sở cho không gian con riêng.} \\
+    Với mỗi $\lambda_i$, giải hệ phương trình tuyến tính thuần nhất $(\mat{A} - \lambda_i\mat{I})\mat{x} = \mat{0}$ bằng phép khử Gauss để tìm cơ sở cho không gian nghiệm $N(\mat{A} - \lambda_i\mat{I})$. Đây chính là \textit{không gian con riêng} $E_{\lambda_i}$. Số chiều của nó gọi là \textit{bội số hình học} (geometric multiplicity).
+    
+    \item \textbf{Bước 3: Kiểm tra điều kiện chéo hóa.} \\
+    Nếu tổng các bội số hình học của mọi giá trị riêng bằng $n$ (tức là ta gom đủ $n$ vectơ riêng độc lập tuyến tính), thì $\mat{A}$ chéo hóa được. Nếu tổng này $< n$, $\mat{A}$ không thể chéo hóa (\textit{defective matrix}).
+    
+    \item \textbf{Bước 4: Xây dựng ma trận $\mat{P}$ và $\mat{D}$.} \\
+    Xếp $n$ vectơ riêng độc lập tuyến tính thành các cột của ma trận $\mat{P}$. Xếp các giá trị riêng tương ứng lên đường chéo chính của ma trận $\mat{D}$ (theo đúng thứ tự cột của $\mat{P}$). Khi đó $\mat{A} = \mat{P}\mat{D}\mat{P}^{-1}$.
+\end{enumerate}
+\end{tcolorbox}
+
+\subsubsection{Ứng Dụng: Tính Lũy Thừa Ma Trận}
+
+Một trong những ứng dụng thực tiễn và mạnh mẽ nhất của chéo hóa là việc tính lũy thừa của ma trận $\mat{A}^k$ với $k$ lớn. 
+
+Việc tính $\mat{A}^k$ trực tiếp bằng cách nhân $k$ lần ma trận đòi hỏi $\mathcal{O}(k \cdot n^3)$ phép toán, vô cùng tốn kém và dễ tích lũy sai số. Tuy nhiên, nếu $\mat{A}$ chéo hóa được thành $\mat{P}\mat{D}\mat{P}^{-1}$, ta có:
+\begin{align*}
+    \mat{A}^2 &= (\mat{P}\mat{D}\mat{P}^{-1})(\mat{P}\mat{D}\mat{P}^{-1}) = \mat{P}\mat{D}(\mat{P}^{-1}\mat{P})\mat{D}\mat{P}^{-1} = \mat{P}\mat{D}^2\mat{P}^{-1} \\
+    &\vdots \\
+    \mat{A}^k &= \mat{P}\mat{D}^k\mat{P}^{-1}
+\end{align*}
+
+Điều kỳ diệu là việc tính lũy thừa của ma trận đường chéo $\mat{D}^k$ cực kỳ đơn giản, chỉ cần lũy thừa từng phần tử trên đường chéo:
+\begin{equation}
+    \mat{D}^k = 
+    \begin{pmatrix}
+        \lambda_1^k & 0 & \cdots & 0 \\
+        0 & \lambda_2^k & \cdots & 0 \\
+        \vdots & \vdots & \ddots & \vdots \\
+        0 & 0 & \cdots & \lambda_n^k
+    \end{pmatrix}
+\end{equation}
+
+Do đó, độ phức tạp để tính $\mat{A}^k$ giảm từ $\mathcal{O}(k \cdot n^3)$ xuống chỉ còn $\mathcal{O}(n^3)$ (do chỉ cần 2 phép nhân ma trận ở cuối: $\mat{P} \cdot \mat{D}^k \cdot \mat{P}^{-1}$) cộng với $n$ phép lũy thừa số học.
+
+\begin{note}[Ứng dụng trong các hệ động lực học]
+Tính chất lũy thừa nhanh này là chìa khóa để giải quyết các mô hình tiến hóa theo thời gian trong thực tế, chẳng hạn như xích Markov, mô hình dân số (ma trận Leslie), phân tích sự ổn định của hệ thống, và thuật toán PageRank của Google~\cite{strang2023}. Nó cho phép ta tính toán trạng thái của hệ thống sau hàng nghìn, hàng triệu bước thời gian một cách tức thời.
+\end{note}

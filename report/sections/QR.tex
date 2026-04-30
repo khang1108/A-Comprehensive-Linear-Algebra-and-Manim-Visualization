@@ -1,0 +1,734 @@
+\subsection{Phân rã QR \- QR Decomposition}
+\subsubsection{Giới Thiệu và Đặt Vấn Đề}
+
+\subsubsection{Bối cảnh và Động lực}
+
+Trong tính toán khoa học và kỹ thuật số, bài toán cốt lõi thường gặp là giải hệ
+phương trình tuyến tính $\mat{A}\mat{x} = \mat{b}$ hoặc tìm xấp xỉ tốt nhất cho
+hệ phương trình không tương thích (\textit{overdetermined system}). Phép khử Gauss,
+mặc dù hiệu quả, có những hạn chế nhất định trong các trường hợp ma trận hình chữ
+nhật ($m > n$) hoặc khi yêu cầu độ chính xác số cao.
+
+Phân rã QR là một trong những kỹ thuật quan trọng nhất của đại số tuyến tính số,
+được sử dụng rộng rãi trong nhiều lĩnh vực: từ học máy (\textit{machine learning}),
+xử lý tín hiệu số, cho đến mô phỏng vật lý và kinh tế lượng~\cite{golub2013}. Ý tưởng trung tâm là
+biểu diễn ma trận $\mat{A}$ dưới dạng tích của một ma trận trực giao $\mat{Q}$ và
+một ma trận tam giác trên $\mat{R}$, qua đó khai thác những tính chất đặc biệt của
+hai lớp ma trận này để đơn giản hóa các tính toán.
+
+\subsubsection{Vấn đề Cần Giải Quyết}
+
+\begin{tcolorbox}[enhanced, colback=blue!8!white, colframe=primaryblue,
+    title=\textbf{Bài toán tổng quát}, fonttitle=\bfseries]
+Cho ma trận $\mat{A} \in \R^{m \times n}$ với $m \geq n$ và $\rank(\mat{A}) = n$.
+Mục tiêu là tìm cách biểu diễn $\mat{A} = \mat{Q}\mat{R}$ sao cho:
+\begin{itemize}[noitemsep]
+    \item $\mat{Q} \in \R^{m \times n}$ có các cột trực chuẩn: $\mat{Q}^T\mat{Q} = \mat{I}_n$,
+    \item $\mat{R} \in \R^{n \times n}$ là ma trận tam giác trên với các phần tử đường
+          chéo dương.
+\end{itemize}
+\end{tcolorbox}
+
+\vspace{0.5em}
+Từ bài toán cơ bản trên, các ứng dụng trực tiếp bao gồm:
+\begin{enumerate}
+    \item \textbf{Bài toán bình phương tối thiểu:} Tìm $\hat{\mat{x}} \in \R^n$ cực
+          tiểu hóa $\norm{\mat{A}\mat{x} - \mat{b}}_2^2$ khi hệ có nhiều phương trình
+          hơn ẩn số.
+    \item \textbf{Thuật toán QR tìm giá trị riêng:} Tính trị riêng của ma trận vuông
+          thông qua quá trình lặp QR (\textit{QR iteration algorithm}).
+    \item \textbf{Giải hệ phương trình:} Khi $m = n$, giải $\mat{A}\mat{x} = \mat{b}$
+          thông qua hệ tam giác trên $\mat{R}\mat{x} = \mat{Q}^T\mat{b}$.
+\end{enumerate}
+
+
+\subsubsection{Cơ Sở Lý Thuyết}
+
+\subsubsection{Không gian Vectơ và Tích trong}
+
+\begin{mydef}{Tích trong trên $\R^n$}{}
+Tích trong chuẩn (dot product) của hai vectơ $\mat{u}, \mat{v} \in \R^n$ được định
+nghĩa là:
+\[
+    \inner{\mat{u}}{\mat{v}} = \mat{u}^T\mat{v} = \sum_{i=1}^{n} u_i v_i.
+\]
+Chuẩn Euclid (chuẩn 2) của $\mat{v}$ là $\norm{\mat{v}}_2 = \sqrt{\inner{\mat{v}}{\mat{v}}}$.
+\end{mydef}
+
+\begin{mydef}{Trực giao và Trực chuẩn}{}
+Hai vectơ $\mat{u}, \mat{v} \in \R^n$ được gọi là \textbf{trực giao} (orthogonal)
+nếu $\inner{\mat{u}}{\mat{v}} = 0$.
+Tập $\{\mat{q}_1, \mat{q}_2, \ldots, \mat{q}_k\}$ được gọi là \textbf{trực chuẩn}
+(orthonormal) nếu:
+\[
+    \inner{\mat{q}_i}{\mat{q}_j} = \delta_{ij} =
+    \begin{cases} 1 & \text{nếu } i = j, \\ 0 & \text{nếu } i \neq j. \end{cases}
+\]
+\end{mydef}
+
+\begin{myprop}{Độc lập tuyến tính của tập trực chuẩn}{}
+Mọi tập trực chuẩn đều là tập độc lập tuyến tính.
+\end{myprop}
+
+\begin{proof}
+Giả sử tồn tại các hệ số $c_1, c_2, \ldots, c_k \in \R$ sao cho:
+\[
+    \sum_{i=1}^{k} c_i \mat{q}_i = \mat{0}.
+\]
+Lấy tích trong hai vế với $\mat{q}_j$ (với $j$ tùy ý, $1 \leq j \leq k$) và sử dụng
+tính tuyến tính của tích trong:
+\[
+    \left\langle \sum_{i=1}^{k} c_i \mat{q}_i,\, \mat{q}_j \right\rangle
+    = \sum_{i=1}^{k} c_i \inner{\mat{q}_i}{\mat{q}_j}
+    = \sum_{i=1}^{k} c_i \delta_{ij}
+    = c_j
+    = \inner{\mat{0}}{\mat{q}_j} = 0.
+\]
+Vì $j$ tùy ý, suy ra $c_j = 0$ với mọi $j = 1, 2, \ldots, k$. Do đó tập
+$\{\mat{q}_1, \ldots, \mat{q}_k\}$ độc lập tuyến tính.
+\end{proof}
+
+\subsubsection{Phép Chiếu Trực Giao}
+
+\begin{mydef}{Phép chiếu trực giao}{}
+Phép chiếu trực giao của $\mat{a}$ lên vectơ đơn vị $\mat{q}$ là:
+\[
+    \proj{\mat{a}}{\mat{q}} = \inner{\mat{a}}{\mat{q}} \, \mat{q} = \frac{\mat{q}\mat{q}^T}{\mat{q}^T\mat{q}} \mat{a}.
+\]
+Thành phần trực giao (phần dư) là $\mat{a} - \proj{\mat{a}}{\mat{q}}$, vuông góc với $\mat{q}$.
+\end{mydef}
+
+Khái niệm này là nền tảng của thuật toán Gram--Schmidt: để xây dựng một vectơ mới
+trực giao với tất cả các vectơ trước đó, ta lần lượt loại bỏ (khử) các thành phần
+chiếu.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=2.0, >=Stealth]
+  % Axes hint
+  \draw[gray!30, very thin] (-0.2,0) -- (3.2,0);
+  \draw[gray!30, very thin] (0,-0.2) -- (0,1.8);
+  % Unit vector q
+  \draw[->, very thick, primaryblue] (0,0) -- (2.8,0)
+    node[right, primaryblue] {$\mathbf{q}$};
+  % Vector a
+  \draw[->, very thick, darkgray] (0,0) -- (2.1,1.5)
+    node[above right, darkgray] {$\mathbf{a}$};
+  % Projection component along q
+  \draw[->, thick, successgreen] (0,0) -- (2.1,0)
+    node[below, successgreen, yshift=-4pt]
+    {$\operatorname{proj}_{\mathbf{q}}\mathbf{a} = \langle \mathbf{a},\mathbf{q}\rangle\,\mathbf{q}$};
+  % Residual (perpendicular component)
+  \draw[->, dashed, thick, warnorange] (2.1,0) -- (2.1,1.5)
+    node[right, warnorange] {$\mathbf{a} - \operatorname{proj}_{\mathbf{q}}\mathbf{a}$};
+  % Right-angle marker
+  \draw[darkgray] (1.95,0) -- (1.95,0.15) -- (2.1,0.15);
+  % Origin label
+  \node[below left] at (0,0) {$O$};
+\end{tikzpicture}
+\caption{Minh họa hình học của phép chiếu trực giao: vectơ $\mathbf{a}$ được
+phân tích thành thành phần dọc theo $\mathbf{q}$ (màu xanh lá) và thành phần
+vuông góc với $\mathbf{q}$ (màu cam, chính là phần dư sau khi khử chiếu).}
+\label{fig:orthogonal_projection}
+\end{figure}
+
+\subsubsection{Ma Trận Trực Giao}
+
+\begin{mydef}{Ma trận trực giao}{}
+Ma trận $\mat{Q} \in \R^{n \times n}$ được gọi là \textbf{trực giao} nếu
+$\mat{Q}^T\mat{Q} = \mat{Q}\mat{Q}^T = \mat{I}_n$,
+tức là $\mat{Q}^{-1} = \mat{Q}^T$.
+\end{mydef}
+
+\begin{mythm}{Tính chất bảo toàn chuẩn}{}
+Nhân một vectơ với ma trận trực giao không làm thay đổi chuẩn của nó:
+$\norm{\mat{Q}\mat{x}}_2 = \norm{\mat{x}}_2$ với mọi $\mat{x} \in \R^n$.
+\end{mythm}
+
+\begin{proof}
+Với mọi $\mat{x} \in \R^n$, ta tính trực tiếp:
+\begin{align*}
+    \norm{\mat{Q}\mat{x}}_2^2
+    &= \inner{\mat{Q}\mat{x}}{\mat{Q}\mat{x}} \\
+    &= (\mat{Q}\mat{x})^T(\mat{Q}\mat{x}) \\
+    &= \mat{x}^T \underbrace{\mat{Q}^T\mat{Q}}_{=\,\mat{I}_n} \mat{x} \\
+    &= \mat{x}^T\mat{x} \\
+    &= \norm{\mat{x}}_2^2.
+\end{align*}
+Lấy căn bậc hai hai vế (cả hai vế không âm): $\norm{\mat{Q}\mat{x}}_2 = \norm{\mat{x}}_2$.
+\end{proof}
+
+Tính chất bảo toàn chuẩn mang ý nghĩa hình học quan trọng: phép biến đổi tuyến tính
+ứng với ma trận trực giao là phép quay (\textit{rotation}) hoặc phản xạ
+(\textit{reflection}) trong không gian Euclid, không làm biến dạng hình dạng hay kích
+thước của đối tượng.
+
+
+\subsubsection{Tồn Tại và Duy Nhất của Phân Rã QR}
+
+\begin{mythm}{Tồn tại và duy nhất của phân rã QR}{qr_exist}
+Cho $\mat{A} \in \R^{m \times n}$ với $m \geq n$ và $\rank(\mat{A}) = n$.
+Tồn tại duy nhất một cặp $(\mat{Q}, \mat{R})$ sao cho:
+\[
+    \mat{A} = \mat{Q}\mat{R},
+\]
+trong đó $\mat{Q} \in \R^{m \times n}$ có các cột trực chuẩn và $\mat{R} \in \R^{n \times n}$
+là ma trận tam giác trên với $r_{ii} > 0$ với mọi $i$.
+\end{mythm}
+
+\begin{proof}
+\textbf{(Tồn tại)} Được xây dựng tường minh qua thuật toán Gram--Schmidt
+(Mục~\ref{sec:gram_schmidt}) hoặc phản xạ Householder (Mục~\ref{sec:householder}).
+Mỗi thuật toán cho một quy trình xác định để tính $\mat{Q}$ và $\mat{R}$~\cite{trefethen1997}.
+
+\medskip
+\textbf{(Duy nhất)} Giả sử $\mat{A} = \mat{Q}_1\mat{R}_1 = \mat{Q}_2\mat{R}_2$ là
+hai phân rã thỏa điều kiện của định lý, trong đó $\mat{Q}_i^T\mat{Q}_i = \mat{I}_n$
+và $\mat{R}_i$ tam giác trên với đường chéo dương. Vì $r_{ii} > 0$ nên $\mat{R}_1$
+và $\mat{R}_2$ đều khả nghịch.
+
+\medskip
+\noindent\textit{Bước 1: Xây dựng ma trận trung gian $\mat{M}$.}
+
+Từ $\mat{Q}_1\mat{R}_1 = \mat{Q}_2\mat{R}_2$, nhân phải với $\mat{R}_1^{-1}$
+và nhân trái với $\mat{Q}_2^T$, đặt:
+\[
+    \mat{M} \;\coloneqq\; \mat{Q}_2^T\mat{Q}_1 \;=\; \mat{R}_2\mat{R}_1^{-1}.
+\]
+
+\noindent\textit{Bước 2: $\mat{M}$ là ma trận trực giao vuông.}
+
+Từ vế trái: $\mat{M}^T\mat{M} = \mat{Q}_1^T\mat{Q}_2\mat{Q}_2^T\mat{Q}_1$.
+Mặt khác $\mat{M}\mat{M}^T = \mat{Q}_2^T\mat{Q}_1\mat{Q}_1^T\mat{Q}_2$.
+Vì $\mat{Q}_i^T\mat{Q}_i = \mat{I}_n$, theo tính chất của ma trận bán trực giao,
+ta chứng minh được $\mat{M}^T\mat{M} = \mat{M}\mat{M}^T = \mat{I}_n$,
+tức $\mat{M} \in \R^{n \times n}$ là ma trận trực giao vuông.
+
+\medskip
+\noindent\textit{Bước 3: $\mat{M}$ là ma trận tam giác trên.}
+
+Từ vế phải: $\mat{M} = \mat{R}_2\mat{R}_1^{-1}$ là tích của hai ma trận tam giác
+trên, nên $\mat{M}$ cũng tam giác trên.
+
+\medskip
+\noindent\textit{Bước 4: $\mat{M}$ vừa trực giao vừa tam giác trên $\Rightarrow$ $\mat{M} = \mat{I}_n$.}
+
+Viết $\mat{M} = (m_{ij})$. Vì $\mat{M}$ tam giác trên: $m_{ij} = 0$ với $i > j$.
+Vì $\mat{M}$ trực giao, chuẩn mỗi cột bằng 1. Với cột 1:
+\[
+    m_{11}^2 = 1 \implies m_{11} = \pm 1.
+\]
+Vì chuẩn hàng 1 cũng bằng 1:
+\[
+    m_{11}^2 + \sum_{j=2}^{n} m_{1j}^2 = 1
+    \implies \sum_{j=2}^{n} m_{1j}^2 = 0
+    \implies m_{1j} = 0 \;\;\forall\, j \geq 2.
+\]
+Lặp lập luận cho cột/hàng $2, 3, \ldots, n$, suy ra $\mat{M} = \operatorname{diag}(\pm 1, \ldots, \pm 1)$.
+
+Cuối cùng, $\mat{M} = \mat{R}_2\mat{R}_1^{-1}$ là tích của hai ma trận có đường chéo
+\emph{dương}, nên $\mat{M}$ phải có đường chéo dương. Do đó $\mat{M} = \mat{I}_n$,
+suy ra $\mat{Q}_1 = \mat{Q}_2$ và $\mat{R}_1 = \mat{R}_2$.
+\end{proof}
+
+% ============================================================
+\subsubsection{Phương Pháp Gram--Schmidt}
+\label{sec:gram_schmidt}
+% ============================================================
+
+\subsubsection{Ý Tưởng Cơ Bản}
+
+Thuật toán Gram--Schmidt xây dựng cơ sở trực chuẩn cho không gian cột của $\mat{A}$
+bằng cách lần lượt xử lý từng cột $\mat{a}_1, \mat{a}_2, \ldots, \mat{a}_n$~\cite{strang2023}.
+Tại mỗi bước $k$, vectơ $\mat{a}_k$ được khử hết các thành phần chiếu lên các
+vectơ trực chuẩn đã xây dựng trước đó, sau đó được chuẩn hóa về độ dài 1.
+
+\subsubsection{Gram--Schmidt Cổ Điển (CGS)}
+
+\begin{mydef}{Thuật toán Gram--Schmidt cổ điển}{}
+\textbf{Đầu vào:} Ma trận $\mat{A} = [\mat{a}_1 \mid \mat{a}_2 \mid \cdots \mid \mat{a}_n]
+\in \R^{m \times n}$, $\rank(\mat{A}) = n$.
+
+\textbf{Đầu ra:} Ma trận $\mat{Q} = [\mat{q}_1 \mid \cdots \mid \mat{q}_n]$ (trực chuẩn)
+và $\mat{R} = (r_{ij})$ (tam giác trên) thỏa $\mat{A} = \mat{Q}\mat{R}$.
+
+Với $k = 1, 2, \ldots, n$:
+\begin{align}
+    r_{jk} &= \inner{\mat{a}_k}{\mat{q}_j}, \quad j = 1, \ldots, k-1, \label{eq:cgs_rjk} \\
+    \tilde{\mat{q}}_k &= \mat{a}_k - \sum_{j=1}^{k-1} r_{jk}\, \mat{q}_j, \label{eq:cgs_qtilde} \\
+    r_{kk} &= \norm{\tilde{\mat{q}}_k}_2, \label{eq:cgs_rkk} \\
+    \mat{q}_k &= \frac{\tilde{\mat{q}}_k}{r_{kk}}. \label{eq:cgs_qk}
+\end{align}
+\end{mydef}
+
+\begin{note}[Điều kiện không suy biến]
+Nếu $r_{kk} = \norm{\tilde{\mat{q}}_k}_2 = 0$ tại bước $k$, thì $\mat{a}_k$ là tổ
+hợp tuyến tính của $\mat{a}_1, \ldots, \mat{a}_{k-1}$, tức là $\rank(\mat{A}) < n$.
+Điều này mâu thuẫn với giả thiết ban đầu, vì vậy thuật toán luôn xác định khi
+$\mat{A}$ có hạng đầy đủ cột.
+\end{note}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=1.7, >=Stealth]
+  %--- Step 0: original vectors ---
+  \begin{scope}[xshift=0cm]
+    \node[primaryblue, font=\small\bfseries] at (1.2, 2.55) {Bước 1: Chuẩn hóa $\mathbf{a}_1$};
+    \draw[->, thick, darkgray]   (0,0) -- (2.2,0.6)  node[right, darkgray]  {$\mathbf{a}_1$};
+    \draw[->, thick, gray]       (0,0) -- (0.9,1.9)  node[right, gray]      {$\mathbf{a}_2$};
+    \draw[->, very thick, primaryblue] (0,0) -- (1.93,0.525) node[below right, primaryblue] {$\mathbf{q}_1$};
+    \node[below left] at (0,0) {$O$};
+  \end{scope}
+  %--- Separator ---
+  \draw[gray!40, dashed, thick] (2.7,-0.3) -- (2.7,2.7);
+  %--- Step 1: subtract projection, get q2 ---
+  \begin{scope}[xshift=3.2cm]
+    \node[accentblue, font=\small\bfseries] at (1.2, 2.55) {Bước 2: Trừ chiếu, chuẩn hóa};
+    \draw[->, thick, primaryblue] (0,0) -- (1.93,0.525) node[below right, primaryblue] {$\mathbf{q}_1$};
+    \draw[->, thick, gray]        (0,0) -- (0.9,1.9)   node[right, gray]    {$\mathbf{a}_2$};
+    % projection of a2 onto q1
+    \draw[->, thick, successgreen!70!black] (0,0) -- (0.74,0.202)
+      node[below, yshift=-2pt, successgreen!70!black, font=\footnotesize]
+      {$r_{12}\mathbf{q}_1$};
+    % residual line
+    \draw[dashed, warnorange, thick] (0.9,1.9) -- (0.74,0.202);
+    % q2
+    \draw[->, very thick, accentblue] (0,0) -- (0.155,1.698)
+      node[left, accentblue] {$\mathbf{q}_2$};
+    % right angle marker at foot of residual
+    \draw[darkgray] (0.62,0.218) -- (0.636,0.387) -- (0.806,0.370);
+    \node[below left] at (0,0) {$O$};
+  \end{scope}
+\end{tikzpicture}
+\caption{Minh họa Gram--Schmidt trong $\R^2$: \textbf{Bước~1} — chuẩn hóa
+$\mathbf{a}_1$ để có $\mathbf{q}_1$; \textbf{Bước~2} — khử thành phần chiếu
+của $\mathbf{a}_2$ lên $\mathbf{q}_1$, sau đó chuẩn hóa phần dư để có
+$\mathbf{q}_2 \perp \mathbf{q}_1$.}
+\label{fig:gram_schmidt_2d}
+\end{figure}
+
+\subsubsubsection{Liên hệ với Ma trận $\mat{R}$}
+
+Từ phương trình~\eqref{eq:cgs_qtilde}, ta có thể viết lại:
+\[
+    \mat{a}_k = \sum_{j=1}^{k-1} r_{jk}\, \mat{q}_j + r_{kk}\, \mat{q}_k
+    = \sum_{j=1}^{k} r_{jk}\, \mat{q}_j.
+\]
+Đây chính là cột thứ $k$ của hệ thức $\mat{A} = \mat{Q}\mat{R}$, trong đó $\mat{R}$
+là ma trận tam giác trên với:
+\[
+    r_{jk} = \inner{\mat{a}_k}{\mat{q}_j} \quad (j < k), \qquad r_{kk} = \norm{\tilde{\mat{q}}_k}_2 > 0.
+\]
+
+\subsubsection{Gram--Schmidt Chỉnh Hóa (MGS)}
+
+Trong thực tế tính toán số với độ chính xác hữu hạn (floating-point arithmetic), CGS
+có thể tích lũy sai số làm tròn đáng kể, khiến các vectơ $\mat{q}_k$ dần mất đi
+tính trực giao. Gram--Schmidt chỉnh hóa (Modified Gram--Schmidt, MGS) giải quyết
+vấn đề này bằng cách cập nhật liên tiếp thay vì khử tất cả trong một bước.
+
+\begin{mydef}{Thuật toán Gram--Schmidt chỉnh hóa (MGS)}{}
+\textbf{Đầu vào/Đầu ra:} Như CGS.
+
+Với $k = 1, 2, \ldots, n$:
+\begin{enumerate}[label=\arabic*.]
+    \item Gán $\mat{v} \leftarrow \mat{a}_k$.
+    \item Với $j = 1, 2, \ldots, k-1$:
+    \begin{align}
+        r_{jk} &= \inner{\mat{v}}{\mat{q}_j}, \label{eq:mgs_rjk} \\
+        \mat{v} &\leftarrow \mat{v} - r_{jk}\, \mat{q}_j. \label{eq:mgs_update}
+    \end{align}
+    \item $r_{kk} = \norm{\mat{v}}_2$, \quad $\mat{q}_k = \mat{v} / r_{kk}$.
+\end{enumerate}
+\end{mydef}
+
+\subsubsubsection{So Sánh CGS và MGS}
+
+Về mặt đại số chính xác, CGS và MGS cho cùng kết quả. Tuy nhiên:
+\begin{itemize}
+    \item Trong \textbf{CGS}: tất cả hệ số $r_{jk}$ được tính từ $\mat{a}_k$
+          \textit{trước} khi cập nhật, nên sai số tích lũy từ các vectơ trước
+          không được hiệu chỉnh kịp thời.
+    \item Trong \textbf{MGS}: sau mỗi lần trừ thành phần chiếu, vectơ $\mat{v}$
+          được cập nhật ngay lập tức, giúp giảm sai số lan truyền một cách đáng
+          kể, đặc biệt khi ma trận gần kỳ dị (\textit{ill-conditioned}).
+\end{itemize}
+
+% ============================================================
+\subsubsection{Phương Pháp Phản Xạ Householder}
+\label{sec:householder}
+% ============================================================
+
+\subsubsection{Ma Trận Householder}
+
+Nếu Gram--Schmidt xây dựng $\mat{Q}$ từng cột, thì phương pháp Householder xây dựng
+$\mat{R}$ bằng cách nhân $\mat{A}$ với dãy ma trận phản xạ, từng bước đưa $\mat{A}$
+về dạng tam giác trên~\cite{golub2013}.
+
+\begin{mydef}{Ma trận phản xạ Householder}{}
+Cho vectơ $\mat{v} \in \R^m$, $\mat{v} \neq \mat{0}$. Ma trận Householder ứng với
+$\mat{v}$ là:
+\[
+    \mat{H} = \mat{I} - \frac{2\mat{v}\mat{v}^T}{\mat{v}^T\mat{v}} = \mat{I} - 2\hat{\mat{v}}\hat{\mat{v}}^T,
+    \quad \hat{\mat{v}} = \frac{\mat{v}}{\norm{\mat{v}}_2}.
+\]
+\end{mydef}
+
+\begin{mythm}{Tính chất của ma trận Householder}{}
+Ma trận Householder $\mat{H}$ thỏa mãn:
+\begin{enumerate}[label=(\roman*)]
+    \item \textbf{Đối xứng:} $\mat{H}^T = \mat{H}$.
+    \item \textbf{Trực giao:} $\mat{H}^T\mat{H} = \mat{I}$, tức $\mat{H}^{-1} = \mat{H}$.
+    \item \textbf{Tự nghịch đảo:} $\mat{H}^2 = \mat{I}$.
+\end{enumerate}
+\end{mythm}
+
+\begin{proof}
+Ký hiệu $\hat{\mat{v}} = \mat{v}/\norm{\mat{v}}_2$ để gọn, sao cho
+$\mat{H} = \mat{I} - 2\hat{\mat{v}}\hat{\mat{v}}^T$ và
+$\hat{\mat{v}}^T\hat{\mat{v}} = \norm{\hat{\mat{v}}}_2^2 = 1$.
+
+\medskip
+\noindent(i) \textbf{Đối xứng:}
+\[
+    \mat{H}^T = (\mat{I} - 2\hat{\mat{v}}\hat{\mat{v}}^T)^T
+    = \mat{I}^T - 2(\hat{\mat{v}}\hat{\mat{v}}^T)^T
+    = \mat{I} - 2(\hat{\mat{v}}^T)^T\hat{\mat{v}}^T
+    = \mat{I} - 2\hat{\mat{v}}\hat{\mat{v}}^T = \mat{H}.
+\]
+
+\noindent(ii) \textbf{Trực giao:} Sử dụng kết quả (i), $\mat{H}^T = \mat{H}$:
+\begin{align*}
+    \mat{H}^T\mat{H} = \mat{H}^2
+    &= \left(\mat{I} - 2\hat{\mat{v}}\hat{\mat{v}}^T\right)^2 \\
+    &= \mat{I}^2 - 2\cdot 2\,\hat{\mat{v}}\hat{\mat{v}}^T
+       + (2\hat{\mat{v}}\hat{\mat{v}}^T)(2\hat{\mat{v}}\hat{\mat{v}}^T) \\
+    &= \mat{I} - 4\hat{\mat{v}}\hat{\mat{v}}^T
+       + 4\,\hat{\mat{v}}\underbrace{(\hat{\mat{v}}^T\hat{\mat{v}})}_{=\,1}\hat{\mat{v}}^T \\
+    &= \mat{I} - 4\hat{\mat{v}}\hat{\mat{v}}^T + 4\hat{\mat{v}}\hat{\mat{v}}^T
+    = \mat{I}.
+\end{align*}
+
+\noindent(iii) \textbf{Tự nghịch đảo:} Trực tiếp từ $\mat{H}^2 = \mat{I}$ (đã chứng
+minh ở (ii)), suy ra $\mat{H}^{-1} = \mat{H}$.
+\end{proof}
+
+\subsubsection{Xây Dựng Vectơ Householder}
+
+Để triệt tiêu tất cả phần tử dưới phần tử đầu tiên của một vectơ $\mat{x}$,
+ta cần tìm $\mat{v}$ sao cho $\mat{H}\mat{x} = \alpha \mat{e}_1$. Giá trị $\alpha$
+và $\mat{v}$ được xác định như sau:
+
+\begin{equation}
+    \alpha = -\operatorname{sign}(x_1)\norm{\mat{x}}_2,
+    \qquad
+    \mat{v} = \mat{x} - \alpha\mat{e}_1.
+    \label{eq:householder_v}
+\end{equation}
+
+Việc chọn dấu của $\alpha$ ngược với dấu $x_1$ giúp tránh hiện tượng triệt tiêu số
+(\textit{catastrophic cancellation}) khi $x_1 \approx \norm{\mat{x}}_2$.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=1.55, >=Stealth]
+  % ============================================================
+  % Exact geometry: x=(1,sqrt(3)), ||x||=2; alpha=-2; Hx=(-2,0)
+  % v = x - Hx = (3, sqrt(3)); midpoint M = (-0.5, 0.866)
+  % Hyperplane: through M, perpendicular to v
+  % Direction along hyperplane: (0.5, -0.866) [angle -60 deg from horizontal]
+  % Endpoints: M +/- 1.35*(0.5,-0.866)
+  %   Upper: (-0.5-0.675, 0.866+1.170) = (-1.175, 2.036)
+  %   Lower: (-0.5+0.675, 0.866-1.170) = ( 0.175,-0.304)
+  % ============================================================
+
+  % --- Reflecting hyperplane (dashed line, clearly visible) ---
+  \draw[dashed, gray!60, very thick]
+    (-1.175, 2.036) -- (0.175, -0.304);
+
+  % --- Label for hyperplane ---
+  \node[gray, font=\small, anchor=south west] at (-1.05, 2.05)
+    {Mặt phẳng phản xạ};
+
+  % --- Right-angle marker at M=(-0.5, 0.866) ---
+  % Along v unit=(0.866,0.5); along hyperplane unit=(0.5,-0.866); step=0.11
+  % A = M + 0.11*(0.866,0.5)  = (-0.405, 0.921)
+  % B = A + 0.11*(0.5,-0.866) = (-0.350, 0.825)
+  % C = M + 0.11*(0.5,-0.866) = (-0.445, 0.771)
+  \draw[darkgray, thin]
+    (-0.405, 0.921) -- (-0.350, 0.825) -- (-0.445, 0.771);
+
+  % --- Origin ---
+  \fill[black] (0,0) circle(1.3pt);
+  \node[below right] at (0,0) {$O$};
+
+  % --- Arc showing ||x||=||Hx||=2 (from 60 deg to 180 deg) ---
+  \draw[successgreen!70!black, thick]
+    plot[domain=60:180, samples=60, variable=\t]
+      ({2*cos(\t)}, {2*sin(\t)});
+  \node[successgreen!70!black, font=\footnotesize, anchor=east] at (-1.55, 1.1)
+    {$\|\mathbf{x}\|=\|\mat{H}\mathbf{x}\|$};
+
+  % --- Vector x = (1, sqrt(3)) ---
+  \draw[->, very thick, primaryblue] (0,0) -- (1.0, 1.732)
+    node[above right, primaryblue] {$\mathbf{x}$};
+  \fill[primaryblue] (1.0, 1.732) circle(1.8pt);
+
+  % --- Vector Hx = alpha*e1 = (-2, 0) ---
+  \draw[->, very thick, accentblue] (0,0) -- (-2.0, 0)
+    node[below left, accentblue] {$\mat{H}\mathbf{x} = \alpha\mathbf{e}_1$};
+  \fill[accentblue] (-2.0, 0) circle(1.8pt);
+
+  % --- v = x - alpha*e1 (arrow from Hx to x) ---
+  \draw[->, thick, warnorange] (-2.0, 0) -- (1.0, 1.732)
+    node[midway, right, warnorange, xshift=3pt, font=\small]
+    {$\mathbf{v} = \mathbf{x} - \alpha\mathbf{e}_1$};
+\end{tikzpicture}
+\caption{Hình học của phản xạ Householder~\cite{golub2013}: vectơ $\mathbf{x}$ được
+phản chiếu qua mặt phẳng vuông góc với $\mathbf{v} = \mathbf{x} - \alpha\mathbf{e}_1$
+(đường nét đứt) thành $\mat{H}\mathbf{x} = \alpha\mathbf{e}_1$.
+Góc vuông tại trung điểm xác nhận $\mathbf{v} \perp$ mặt phẳng phản xạ.
+Cung tròn xanh lá thể hiện $\|\mat{H}\mathbf{x}\| = \|\mathbf{x}\|$.}
+\label{fig:householder_reflection}
+\end{figure}
+
+\subsubsection{Thuật Toán Phân Rã QR bằng Householder}
+
+\begin{algorithm}[H]
+\caption{Phân rã QR bằng phản xạ Householder}
+\label{alg:householder_qr}
+\begin{algorithmic}[1]
+\Require Ma trận $\mat{A} \in \R^{m \times n}$, $m \geq n$, $\rank(\mat{A}) = n$.
+\Ensure Ma trận $\mat{Q} \in \R^{m \times m}$ trực giao, $\mat{R} \in \R^{m \times n}$ tam giác trên: $\mat{A} = \mat{Q}\mat{R}$.
+\State $\mat{R} \leftarrow \mat{A}$, $\mat{Q} \leftarrow \mat{I}_m$
+\For{$k = 1, 2, \ldots, n$}
+    \State Lấy $\mat{x} \leftarrow \mat{R}[k{:}m,\; k]$ \Comment{Cột dưới của $\mat{R}$}
+    \State Tính $\alpha \leftarrow -\operatorname{sign}(x_1)\norm{\mat{x}}_2$
+    \State Tính $\mat{v} \leftarrow \mat{x} - \alpha\mat{e}_1^{(m-k+1)}$
+    \State $\mat{H}_k \leftarrow \mat{I}_{m-k+1} - \dfrac{2\mat{v}\mat{v}^T}{\mat{v}^T\mat{v}}$
+    \State Nhúng vào không gian $m$: $\tilde{\mat{H}}_k \leftarrow \operatorname{diag}(\mat{I}_{k-1}, \mat{H}_k)$
+    \State $\mat{R} \leftarrow \tilde{\mat{H}}_k \mat{R}$
+    \State $\mat{Q} \leftarrow \mat{Q} \tilde{\mat{H}}_k^T$
+\EndFor
+\State \Return $\mat{Q},\; \mat{R}$
+\end{algorithmic}
+\end{algorithm}
+
+Sau $n$ bước, ta thu được:
+\[
+    \tilde{\mat{H}}_n \cdots \tilde{\mat{H}}_2 \tilde{\mat{H}}_1 \mat{A} = \mat{R}
+    \implies \mat{A} = \tilde{\mat{H}}_1 \tilde{\mat{H}}_2 \cdots \tilde{\mat{H}}_n \mat{R} = \mat{Q}\mat{R}.
+\]
+
+\subsubsection{Tính Ổn Định Số}
+
+\subsubsection{Tính Trực Giao Của $\hat{\mat{Q}}$}
+
+Trong thực tế số, ma trận $\hat{\mat{Q}}$ tính được chỉ gần trực giao. Chất lượng
+trực giao được đo bằng:
+\[
+    \epsilon_Q = \norm{\hat{\mat{Q}}^T\hat{\mat{Q}} - \mat{I}}_F.
+\]
+\begin{itemize}
+    \item Householder: $\epsilon_Q = O(n \cdot \epsilon_{\text{mach}})$ (rất nhỏ).
+    \item MGS:         $\epsilon_Q = O(\kappa(\mat{A}) \cdot \epsilon_{\text{mach}})$.
+    \item CGS:         $\epsilon_Q = O(\kappa^2(\mat{A}) \cdot \epsilon_{\text{mach}})$ (có thể rất lớn).
+\end{itemize}
+trong đó $\kappa(\mat{A}) = \sigma_{\max}(\mat{A}) / \sigma_{\min}(\mat{A})$ là số
+điều kiện của $\mat{A}$~\cite{higham2002}. Householder được khuyến nghị trong thực
+tế vì sai số trực giao chỉ cấp $O(n\,\epsilon_{\text{mach}})$, không phụ thuộc vào
+số điều kiện, trong khi CGS có thể mất trực giao hoàn toàn khi $\kappa(\mat{A})$ lớn.
+
+\subsubsection{Ứng Dụng: Bài Toán Bình Phương Tối Thiểu}
+
+\subsubsection{Đặt Vấn Đề}
+
+Xét hệ phương trình tuyến tính dư thừa (\textit{overdetermined}):
+\[
+    \mat{A}\mat{x} = \mat{b}, \quad \mat{A} \in \R^{m \times n},\ m > n,\ \rank(\mat{A}) = n.
+\]
+Khi $\mat{b} \notin \col(\mat{A})$, hệ không có nghiệm chính xác. Bài toán bình
+phương tối thiểu yêu cầu tìm:
+\[
+    \hat{\mat{x}} = \arg\min_{\mat{x} \in \R^n} \norm{\mat{A}\mat{x} - \mat{b}}_2^2.
+    \tag{LS}
+    \label{eq:ls}
+\]
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=1.6, >=Stealth]
+  % Draw the column space plane (parallelogram)
+  \fill[primaryblue!10] (0,0) -- (3.2,0.4) -- (3.7,1.3) -- (0.5,0.9) -- cycle;
+  \draw[primaryblue!60, thick]
+    (0,0) -- (3.2,0.4) -- (3.7,1.3) -- (0.5,0.9) -- cycle;
+  \node[primaryblue, font=\small\itshape] at (1.85,0.2) {$\operatorname{col}(\mat{A})$};
+
+  % Origin
+  \fill[black] (0,0) circle (1.5pt);
+  \node[below left] at (0,0) {$O$};
+
+  % Projected point Ax-hat on the plane
+  \coordinate (proj) at (1.9,0.8);
+  \fill[successgreen!80!black] (proj) circle (2pt);
+  \node[below right, successgreen!80!black, font=\small]
+    at (proj) {$\mat{A}\hat{\mat{x}} = \mat{Q}\mat{Q}^T\mat{b}$};
+
+  % Vector b (out of plane)
+  \coordinate (b) at (1.9,2.4);
+  \draw[->, very thick, warnorange] (0,0) -- (b)
+    node[above right, warnorange] {$\mat{b}$};
+  \fill[warnorange] (b) circle (1.5pt);
+
+  % Projection arrow from O to proj
+  \draw[->, thick, successgreen!80!black] (0,0) -- (proj);
+
+  % Residual (perpendicular from b to Ax-hat)
+  \draw[->, dashed, thick, accentblue] (proj) -- (b)
+    node[midway, right, accentblue, font=\small]
+    {$\mat{b} - \mat{A}\hat{\mat{x}}$};
+
+  % Right angle marker at proj
+  \draw[darkgray]
+    ($(proj)+(-0.12,0.18)$) -- ($(proj)+(-0.12+0.18,0.18+0.12)$)
+    -- ($(proj)+(0.18,0.12)$);
+\end{tikzpicture}
+\caption{Hình học bài toán bình phương tối thiểu: $\mat{b}$ nằm ngoài không gian
+cột $\operatorname{col}(\mat{A})$, nghiệm $\hat{\mat{x}}$ cho hình chiếu
+$\mat{A}\hat{\mat{x}}$ lên $\operatorname{col}(\mat{A})$, phần dư
+$\mat{b} - \mat{A}\hat{\mat{x}}$ vuông góc với toàn bộ không gian cột.}
+\label{fig:least_squares_geometry}
+\end{figure}
+
+\subsubsection{Giải Qua Phân Rã QR}
+
+\begin{mythm}{Nghiệm bình phương tối thiểu qua QR}{}
+Cho $\mat{A} = \mat{Q}\mat{R}$ là phân rã QR dạng gọn của $\mat{A}$. Nghiệm của
+bài toán \eqref{eq:ls} là:
+\[
+    \hat{\mat{x}} = \mat{R}^{-1}\mat{Q}^T\mat{b},
+\]
+được xác định duy nhất nhờ $\mat{R}$ khả nghịch (do $r_{ii} > 0$).
+\end{mythm}
+
+\begin{proof}
+Gọi $\mat{A} = \mat{Q}\mat{R}$ là phân rã QR dạng gọn, với $\mat{Q} \in \R^{m \times n}$
+có cột trực chuẩn và $\mat{R} \in \R^{n \times n}$ khả nghịch. Đặt $\mat{Q}_\perp
+\in \R^{m \times (m-n)}$ là ma trận có cột tạo thành cơ sở trực chuẩn cho
+$\col(\mat{Q})^\perp$ (không gian bù trực giao), sao cho
+$\hat{\mat{Q}} = [\mat{Q} \mid \mat{Q}_\perp] \in \R^{m \times m}$ là ma trận trực giao vuông.
+
+Sử dụng tính bảo toàn chuẩn (Định lý~\ref{thm:thm23}) và phân rã khối:
+\begin{align*}
+    \norm{\mat{A}\mat{x} - \mat{b}}_2^2
+    &= \norm{\hat{\mat{Q}}^T(\mat{A}\mat{x} - \mat{b})}_2^2
+    \quad \bigl(\text{vì } \norm{\hat{\mat{Q}}^T\mat{y}}_2 = \norm{\mat{y}}_2\bigr) \\
+    &= \left\|\begin{pmatrix}\mat{Q}^T \\ \mat{Q}_\perp^T\end{pmatrix}
+       (\mat{Q}\mat{R}\mat{x} - \mat{b})\right\|_2^2 \\
+    &= \left\|\begin{pmatrix}\mat{Q}^T\mat{Q}\mat{R}\mat{x} - \mat{Q}^T\mat{b} \\
+       \mat{Q}_\perp^T\mat{Q}\mat{R}\mat{x} - \mat{Q}_\perp^T\mat{b}\end{pmatrix}\right\|_2^2.
+\end{align*}
+Vì $\mat{Q}^T\mat{Q} = \mat{I}_n$ và $\mat{Q}_\perp^T\mat{Q} = \mat{0}$ (do các cột
+của $\mat{Q}_\perp$ trực giao với các cột của $\mat{Q}$):
+\[
+    \norm{\mat{A}\mat{x} - \mat{b}}_2^2
+    = \underbrace{\norm{\mat{R}\mat{x} - \mat{Q}^T\mat{b}}_2^2}_{\text{phụ thuộc vào }\mat{x}}
+    + \underbrace{\norm{\mat{Q}_\perp^T\mat{b}}_2^2}_{\text{không đổi theo }\mat{x}}.
+\]
+Số hạng thứ hai hoàn toàn không phụ thuộc vào $\mat{x}$. Do đó:
+\[
+    \min_{\mat{x} \in \R^n} \norm{\mat{A}\mat{x} - \mat{b}}_2^2
+    = \min_{\mat{x} \in \R^n} \norm{\mat{R}\mat{x} - \mat{Q}^T\mat{b}}_2^2
+      + \norm{\mat{Q}_\perp^T\mat{b}}_2^2.
+\]
+Giá trị cực tiểu đạt được khi và chỉ khi $\mat{R}\hat{\mat{x}} = \mat{Q}^T\mat{b}$.
+Vì $\mat{R}$ khả nghịch (do $r_{ii} > 0$), nghiệm duy nhất là:
+\[
+    \hat{\mat{x}} = \mat{R}^{-1}\mat{Q}^T\mat{b}.
+\]
+Sai số cực tiểu tương ứng là $\norm{\mat{A}\hat{\mat{x}} - \mat{b}}_2
+= \norm{\mat{Q}_\perp^T\mat{b}}_2$, chính là thành phần của $\mat{b}$ nằm ngoài
+không gian cột của $\mat{A}$.
+\end{proof}
+
+\subsubsection{Quy Trình Giải Trên Thực Tế}
+
+\begin{enumerate}
+    \item Tính phân rã QR: $\mat{A} = \mat{Q}\mat{R}$.
+    \item Tính $\mat{c} = \mat{Q}^T\mat{b}$ (phép nhân ma trận--vectơ, $O(mn)$).
+    \item Giải hệ tam giác trên $\mat{R}\hat{\mat{x}} = \mat{c}$ bằng thế ngược
+          (\textit{back substitution}), $O(n^2)$.
+\end{enumerate}
+
+\noindent
+So với phương trình chuẩn (\textit{normal equations}) $\mat{A}^T\mat{A}\hat{\mat{x}} = \mat{A}^T\mat{b}$,
+giải qua QR có ưu điểm là số điều kiện của hệ chỉ là $\kappa(\mat{A})$ thay vì
+$\kappa^2(\mat{A})$, nghĩa là ổn định số tốt hơn đáng kể.
+
+
+\subsubsection{Ứng Dụng: Thuật Toán QR Tìm Giá Trị Riêng}
+
+Phân rã QR là nền tảng của thuật toán lặp tìm giá trị riêng hiệu quả nhất hiện nay,
+được tích hợp trong LAPACK và SciPy~\cite{golub2013}.
+
+\textbf{Ý tưởng cơ bản.} Bắt đầu từ $\mat{A}_0 = \mat{A}$, tại mỗi bước $k$:
+\begin{enumerate}[noitemsep]
+    \item Phân rã QR: $\mat{A}_k = \mat{Q}_k\mat{R}_k$.
+    \item Cập nhật: $\mat{A}_{k+1} = \mat{R}_k\mat{Q}_k = \mat{Q}_k^T\mat{A}_k\mat{Q}_k$.
+\end{enumerate}
+Bước cập nhật là \emph{phép đồng dạng trực giao}, nên $\mat{A}_{k+1}$ luôn có cùng
+tập giá trị riêng với $\mat{A}_0$. Dãy $\{\mat{A}_k\}$ hội tụ về dạng tam giác trên
+(phân tích Schur), các phần tử đường chéo dần tiệm cận về các giá trị riêng~\cite{trefethen1997}.
+
+\textbf{Cải tiến thực tế.} Để tăng tốc hội tụ, người ta dùng kỹ thuật \emph{dịch
+chuyển} (\textit{shift}): thay vì phân rã $\mat{A}_k$, phân rã
+$\mat{A}_k - \mu_k\mat{I}$ với $\mu_k$ chọn gần một giá trị riêng (thường dùng
+\textit{dịch chuyển Wilkinson} — giá trị riêng của ma trận $2\times 2$ góc dưới
+phải của $\mat{A}_k$). Chiến lược này cho \textbf{hội tụ bậc ba}, tức
+$|(a_{k+1})_{n,n-1}| = O(|(a_k)_{n,n-1}|^3)$.
+
+\textbf{Quy trình hoàn chỉnh} (dùng trong thư viện LAPACK):
+\begin{enumerate}[noitemsep]
+    \item Đưa $\mat{A}$ về dạng Hessenberg trên bằng $n-2$ phép phản xạ Householder.
+    \item Áp dụng lặp QR có dịch chuyển Wilkinson trên ma trận Hessenberg.
+    \item Khi $(a_k)_{n,n-1} \approx 0$, tách (\textit{deflation}) và xử lý
+          ma trận con $(n-1)\times(n-1)$.
+\end{enumerate}
+
+\subsubsection{Kết Luận}
+
+Báo cáo đã trình bày một cách có hệ thống lý thuyết phân rã QR từ nền tảng đại số
+tuyến tính đến các ứng dụng quan trọng trong tính toán khoa học. Các điểm cốt lõi
+có thể tóm tắt như sau:
+
+\begin{enumerate}
+    \item \textbf{Nền tảng lý thuyết:} Phân rã $\mat{A} = \mat{Q}\mat{R}$ tồn tại
+          duy nhất khi $\mat{A}$ có hạng đầy đủ cột, với $\mat{Q}$ trực chuẩn và
+          $\mat{R}$ tam giác trên có đường chéo dương. Tính duy nhất được chứng minh
+          qua lập luận: ma trận vừa trực giao vừa tam giác trên tất yếu là ma trận
+          đường chéo $\pm 1$, bị ràng buộc về $+1$ bởi điều kiện đường chéo dương.
+
+    \item \textbf{Gram--Schmidt (CGS và MGS):} MGS vượt trội về tính ổn định số do
+          sai số trực giao chỉ cấp $O(\kappa(\mat{A})\cdot\epsilon_{\text{mach}})$
+          thay vì $O(\kappa^2(\mat{A})\cdot\epsilon_{\text{mach}})$ như CGS. Cả hai
+          đều kém Householder khi số điều kiện $\kappa(\mat{A})$ lớn.
+
+    \item \textbf{Householder:} Phương pháp được khuyến nghị trong thực tế, với sai
+          số trực giao chỉ cấp $O(n\,\epsilon_{\text{mach}})$, hoàn toàn không phụ
+          thuộc vào số điều kiện của $\mat{A}$.
+
+    \item \textbf{Bài toán bình phương tối thiểu:} Giải qua QR ổn định hơn phương
+          trình chuẩn (\textit{normal equations}) vì số điều kiện thực tế của hệ
+          giảm từ $\kappa^2(\mat{A})$ xuống $\kappa(\mat{A})$. Nghiệm thu được bằng
+          một phép nhân ma trận--vectơ và một phép thế ngược hệ tam giác trên.
+
+    \item \textbf{Thuật toán QR tìm giá trị riêng:} Mỗi bước lặp là một phép đồng
+          dạng trực giao, đảm bảo bảo toàn toàn bộ tập giá trị riêng. Hội tụ với
+          tốc độ $O(|\lambda_i/\lambda_j|^k)$; kết hợp dịch chuyển Wilkinson cho
+          hội tụ bậc ba — đây là nền tảng của các thư viện hiện đại như LAPACK và SciPy.
+
+    \item \textbf{Ứng dụng rộng rãi:} Phân rã QR là công cụ trung tâm của đại số
+          tuyến tính số, với ưu điểm ổn định số vượt trội so với phương trình chuẩn
+          và phương pháp lũy thừa (\textit{power method}) trong các bài toán kỹ thuật
+          và khoa học dữ liệu.
+\end{enumerate}

@@ -13,7 +13,7 @@ if project_root not in sys.path:
 
 # Sử dụng hàm từ file solvers của MHN
 # Khang merge th này vào branch của MHN trước 
-from Part3.solvers import (
+from part3.solvers import (
     solve_gauss,
     solve_gauss_seidel,
     solve_qr_householder,

@@ -1,40 +1,59 @@
-from determinant import determinant
-from gaussian import gaussian_eliminate, back_substitution
+from determinant import determinant, _check_matrix
+from gaussian import gaussian_eliminate, back_substitution, _EPS
 from typing import Any, List
 
 import copy
 
-# TODO: inverse(A)
+
 def inverse(A: List[List[float]]) -> List[List[float]]:
-    n, m = len(A), len(A[0])
+    """
+    Tính ma trận nghịch đảo A^{-1} (phương pháp tương đương Gauss–Jordan theo từng cột).
 
-    # Check if the matrix is square
-    if n != m:
-        raise ValueError("The matrix must be squared")
-    if determinant(A) == 0.0:
-        raise ValueError("Determinant equals to 0")
+    Với mỗi cột i của I_n, giải hệ A x = e_i (e_i là vector đơn vị thứ i),
+    nghiệm x là cột thứ i của A^{-1}.
 
-    # Initialize the inverse matrix
-    inv = [[0.0] * n for _ in range(n)]
+    Tham số:
+        A: Ma trận vuông khả nghịch, kích thước n x n.
+
+    Trả về:
+        Ma trận n x n là A^{-1}.
+
+    Ngoại lệ:
+        ValueError: Ma trận không vuông, không hợp lệ, suy biến,
+        hoặc không giải được đủ n hệ với nghiệm duy nhất.
+    """
+    n_rows, n_cols = _check_matrix(A)
+
+    if n_rows != n_cols:
+        raise ValueError(
+            "Chỉ tính nghịch đảo cho ma trận vuông. "
+            f"Nhận được kích thước {n_rows} x {n_cols}."
+        )
+
+    n = n_rows
+
+    # Định thức gần 0 coi là suy biến (tránh so sánh tuyệt đối == 0.0)
+    det_a = determinant(A)
+    if abs(det_a) < _EPS:
+        raise ValueError(
+            "Ma trận suy biến hoặc gần suy biến (định thức gần 0), không có nghịch đảo ổn định."
+        )
+
+    inv: List[List[float]] = [[0.0] * n for _ in range(n)]
 
     for i in range(n):
-        # Create the unit vector e_i
         e = [0.0] * n
         e[i] = 1.0
 
-        # Copy A because gaussian_eliminate may modify it
         A_copy = copy.deepcopy(A)
+        U, c, _ = gaussian_eliminate(A_copy, e)
+        x, status = back_substitution(U, c)
 
-        # Apply Gaussian elimination to the augmented system (A | e_i)
-        mat = gaussian_eliminate(A_copy, e)
+        if status != "Hệ có nghiệm duy nhất":
+            raise ValueError(
+                f"Không thể tính cột {i + 1} của ma trận nghịch đảo: {status}"
+            )
 
-        # Convert result to list and separate U and c
-        U, c, _ = mat
-
-        # Solve Ux = c using back substitution
-        x, _ = back_substitution(U, c)
-
-        # Assign solution as the i-th column of the inverse matrix
         for j in range(n):
             inv[j][i] = x[j]
 

@@ -1,0 +1,159 @@
+\section{Phép khử Gauss và các ứng dụng}
+
+\subsection{Đặt Vấn Đề}
+
+Bài toán trung tâm và có tầm quan trọng bậc nhất trong đại số tuyến tính là giải hệ phương trình tuyến tính $\mat{A}\mat{x} = \mat{b}$, trong đó $\mat{A} \in \R^{m \times n}$, $\mat{x} \in \R^n$ và $\mat{b} \in \R^m$. Từ bài toán nền tảng này phát sinh hàng loạt các bài toán phái sinh quan trọng khác: tính định thức $\det(\mat{A})$, tìm ma trận nghịch đảo $\mat{A}^{-1}$, xác định hạng $\rank(\mat{A})$, và khảo sát cấu trúc các không gian con cơ bản như không gian cột $C(\mat{A})$, không gian dòng $R(\mat{A})$, và không gian nghiệm $N(\mat{A})$~\cite{strang2023}.
+
+Trong lịch sử phát triển của đại số tuyến tính tính toán, phép khử Gauss và phép khử Gauss--Jordan được xem là hai công cụ nền tảng nhất để tiếp cận toàn bộ nhóm bài toán kể trên. Ý tưởng cốt lõi của chúng --- sử dụng các phép biến đổi dòng sơ cấp để đưa ma trận hệ số về các dạng chuẩn --- đã được phát triển và hoàn thiện qua nhiều thế kỷ, từ các công trình của C.\,F.~Gauss (thế kỷ 19) cho đến các phân tích ổn định số học của J.\,H.~Wilkinson vào thế kỷ 20~\cite{golub2013, higham2002}. Khi triển khai trên máy tính với hệ số dấu phẩy động, vấn đề chọn phần tử chốt (\textit{pivoting}) trở nên then chốt để kiểm soát sai số tích lũy --- một nhận thức đã dẫn đến sự ra đời của kỹ thuật \textit{partial pivoting} mà ngày nay được coi là chuẩn mực trong mọi cài đặt thực tế~\cite{higham2002}.
+
+\subsection{Cơ Sở Lý Thuyết}
+
+\subsubsection{Ma trận tăng cường và các phép biến đổi dòng sơ cấp}
+
+Hệ phương trình $\mat{A}\mat{x} = \mat{b}$ có thể được biểu diễn một cách gọn gàng bằng \textbf{ma trận tăng cường} (\textit{augmented matrix})~\cite{strang2023}:
+\begin{equation}
+    [\mat{A} \mid \mat{b}] =
+    \begin{pmatrix}
+     a_{11} & a_{12} & \cdots & a_{1n} & b_1 \\
+     a_{21} & a_{22} & \cdots & a_{2n} & b_2 \\
+     \vdots & \vdots & \ddots & \vdots & \vdots \\
+     a_{m1} & a_{m2} & \cdots & a_{mn} & b_m
+    \end{pmatrix}.
+\end{equation}
+
+Mọi thao tác trên hệ phương trình được thực hiện thông qua ba phép biến đổi dòng sơ cấp, vốn không làm thay đổi tập nghiệm của hệ. Phép thứ nhất là \textbf{hoán đổi hai dòng}: $R_i \leftrightarrow R_j$. Phép thứ hai là \textbf{nhân một dòng với hằng số khác không}: $R_i \leftarrow c\,R_i$ với $c \neq 0$. Phép thứ ba là \textbf{cộng bội của một dòng vào dòng khác}: $R_i \leftarrow R_i + c\,R_j$. Tính hợp lệ của ba phép biến đổi này bắt nguồn từ thực tế rằng mỗi phép tương ứng với phép nhân bên trái ma trận tăng cường bởi một \textbf{ma trận sơ cấp} khả nghịch, do đó bảo toàn hoàn toàn tập nghiệm~\cite{golub2013}.
+
+\subsubsection{Dạng bậc thang dòng (REF) và dạng rút gọn (RREF)}
+
+\begin{mydef}{Dạng bậc thang dòng (Row Echelon Form --- REF)}{ref_def}
+Ma trận $\mat{U}$ được gọi là ở dạng bậc thang dòng nếu thỏa mãn đồng thời hai điều kiện: (i) tất cả các dòng toàn số $0$ nằm phía dưới cùng của ma trận, và (ii) phần tử khác $0$ đầu tiên (\textbf{pivot}) của mỗi dòng khác $0$ nằm bên phải pivot của dòng ngay phía trên.
+\end{mydef}
+
+\begin{mydef}{Dạng bậc thang dòng rút gọn (Reduced REF --- RREF)}{rref_def}
+Ma trận $\mat{R}$ ở dạng RREF nếu ngoài việc thỏa mãn REF, còn thỏa thêm hai điều kiện: (i) mỗi pivot bằng $1$, và (ii) trong mỗi cột chứa pivot, tất cả các phần tử còn lại đều bằng $0$.
+\end{mydef}
+
+Phép khử Gauss sử dụng các phép biến đổi dòng sơ cấp để đưa ma trận về dạng REF, sau đó dùng quá trình thế ngược (\textit{back substitution}) để tìm nghiệm. Phép khử Gauss--Jordan tiếp tục biến đổi từ REF sang RREF, cho phép đọc nghiệm trực tiếp từ ma trận kết quả mà không cần thế ngược. Cả hai dạng đều là công cụ quan trọng trong phân tích cấu trúc của hệ phương trình~\cite{strang2023}.
+
+\subsubsection{Phân loại nghiệm}
+
+Sau khi đưa ma trận tăng cường $[\mat{A} \mid \mat{b}]$ về dạng REF hoặc RREF, hệ phương trình được phân loại thành ba trường hợp dựa trên cấu trúc pivot~\cite{strang2023}. Nếu xuất hiện dòng có dạng $[0\;0\;\cdots\;0 \mid c]$ với $c \neq 0$, hệ \textbf{vô nghiệm} vì ta thu được phương trình mâu thuẫn $0 = c$. Nếu không có mâu thuẫn và số pivot bằng đúng số ẩn $n$, mỗi biến đều là biến pivot và hệ có \textbf{nghiệm duy nhất}. Trường hợp còn lại, khi số pivot nhỏ hơn $n$, các biến không tương ứng với pivot trở thành \textbf{biến tự do}, và hệ có \textbf{vô số nghiệm} được tham số hóa theo các biến tự do đó.
+
+\subsubsection{Khử Gauss có chọn phần tử chốt (Partial Pivoting)}
+
+Trong tính toán dấu phẩy động, phép chia cho một pivot có giá trị tuyệt đối rất nhỏ sẽ khuếch đại sai số làm tròn một cách nghiêm trọng. Để khắc phục vấn đề này, kỹ thuật \textit{partial pivoting} được áp dụng: tại mỗi bước khử thứ $k$, ta chọn dòng $p$ sao cho phần tử chốt có trị tuyệt đối lớn nhất trong phần cột còn lại~\cite{higham2002}:
+\begin{equation}
+    |a^{(k)}_{pk}| = \max_{k \le i \le m} |a^{(k)}_{ik}|.
+\end{equation}
+Sau đó, dòng $k$ và dòng $p$ được hoán đổi trước khi tiến hành khử. Kỹ thuật này đảm bảo rằng tất cả các hệ số nhân (\textit{multipliers}) $\ell_{ik} = a^{(k)}_{ik}/a^{(k)}_{kk}$ thỏa $|\ell_{ik}| \le 1$, giúp hạn chế sự phát triển của sai số. Theo phân tích của Wilkinson, phép khử Gauss với partial pivoting đảm bảo \textbf{ổn định ngược} (\textit{backward stability}) trong hầu hết các trường hợp thực tế~\cite{higham2002, wilkinson1965}. Trong cài đặt, một ngưỡng nhỏ $\varepsilon$ (ví dụ $10^{-12}$) thường được sử dụng để phát hiện các pivot gần bằng $0$, từ đó cảnh báo hệ thống có thể \textbf{kém điều kiện} (\textit{ill-conditioned}).
+
+\begin{note}[Ý nghĩa thực tiễn của Partial Pivoting]
+Partial pivoting không chỉ là một kỹ thuật tối ưu hóa mà là điều kiện tiên quyết cho tính đúng đắn số học của phép khử Gauss khi triển khai trên máy tính. Thiếu pivoting, ngay cả các hệ phương trình nhỏ cũng có thể cho kết quả hoàn toàn sai lệch do hiện tượng tích lũy sai số~\cite{trefethen1997}.
+\end{note}
+
+\subsection{Thuật Toán Khử Gauss Với Partial Pivoting}
+
+Phần này mô tả chi tiết thuật toán khử Gauss có chọn phần tử chốt --- nền tảng cho tất cả các thao tác tính toán trong Phần~1 của đồ án.
+
+\begin{tcolorbox}[enhanced, colback=blue!8!white, colframe=primaryblue,
+    title=\textbf{Thuật toán: Khử Gauss với Partial Pivoting}, fonttitle=\bfseries]
+\textbf{Đầu vào:} Ma trận $\mat{A} \in \R^{m \times n}$, vectơ $\mat{b} \in \R^m$.
+
+\textbf{Đầu ra:} Ma trận tam giác trên $\mat{U}$, vectơ biến đổi $\mat{c}$, số lần hoán đổi dòng $s$, danh sách chỉ số cột pivot.
+
+\textbf{Các bước:}
+\begin{enumerate}[noitemsep]
+    \item Lập ma trận tăng cường $\mat{M} = [\mat{A} \mid \mat{b}]$, đặt $s = 0$.
+    \item Với mỗi cột $k = 1, 2, \ldots, \min(m,n)$:
+    \begin{enumerate}[noitemsep]
+        \item Tìm dòng $p$ sao cho $|M_{pk}| = \max_{k \le i \le m} |M_{ik}|$.
+        \item Nếu $|M_{pk}| < \varepsilon$: cột $k$ không có pivot, chuyển sang cột tiếp theo.
+        \item Nếu $p \neq k$: hoán đổi $R_k \leftrightarrow R_p$, tăng $s \leftarrow s + 1$.
+        \item Với mỗi dòng $i = k+1, \ldots, m$: tính $\ell_{ik} = M_{ik}/M_{kk}$ và cập nhật
+        \begin{equation}
+            M_{i,\cdot} \leftarrow M_{i,\cdot} - \ell_{ik}\,M_{k,\cdot}.
+        \end{equation}
+    \end{enumerate}
+    \item Tách $\mat{U}$ và $\mat{c}$ từ $\mat{M}$.
+\end{enumerate}
+\end{tcolorbox}
+
+\textbf{Độ phức tạp.} Khử Gauss cho ma trận vuông $n \times n$ có độ phức tạp thời gian $\mathcal{O}(\tfrac{2}{3}n^3)$ cho giai đoạn khử và $\mathcal{O}(n^2)$ cho giai đoạn thế ngược, tổng cộng $\mathcal{O}(n^3)$~\cite{golub2013}. Đây là phương pháp phù hợp cho các hệ phương trình có kích thước vừa phải và là nền tảng cho nhiều phương pháp phân rã nâng cao như LU, QR, hay SVD.
+
+\subsection{Các Ứng Dụng Cài Đặt}
+
+\subsubsection{Giải hệ tam giác trên (Back Substitution)}
+
+Sau khi khử Gauss đưa hệ phương trình về dạng tam giác trên $\mat{U}\mat{x} = \mat{c}$, quá trình \textbf{thế ngược} (\textit{back substitution}) giải hệ bằng cách tính lần lượt các thành phần $x_i$ từ dưới lên~\cite{golub2013}. Phương trình cuối cùng cho ta $u_{nn}x_n = c_n$, từ đó $x_n = c_n/u_{nn}$. Các thành phần còn lại được tính theo công thức đệ quy:
+\begin{equation}
+    x_i = \frac{1}{u_{ii}}\left(c_i - \sum_{j=i+1}^{n} u_{ij}\,x_j\right), \quad i = n-1, n-2, \ldots, 1.
+    \label{eq:back_sub}
+\end{equation}
+
+Trong quá trình thế ngược, cần xử lý ba trường hợp riêng biệt. Nếu $u_{ii} \neq 0$ cho mọi $i$, hệ có \textbf{nghiệm duy nhất} và công thức~\eqref{eq:back_sub} áp dụng trực tiếp. Nếu $u_{ii} = 0$ nhưng $c_i \neq 0$, phương trình thứ $i$ trở thành $0 = c_i$ (mâu thuẫn), hệ \textbf{vô nghiệm}. Nếu $u_{ii} = 0$ và $c_i = 0$, biến $x_i$ trở thành \textbf{biến tự do} và hệ có \textbf{vô số nghiệm}; nghiệm tổng quát được biểu diễn dưới dạng tổ hợp tuyến tính của các vectơ cơ sở ứng với từng biến tự do.
+
+\subsubsection{Tính định thức qua khử Gauss}
+
+Định thức của ma trận vuông $\mat{A} \in \R^{n \times n}$ có thể được tính hiệu quả thông qua phép khử Gauss. Sau khi đưa $\mat{A}$ về dạng tam giác trên $\mat{U}$ với $s$ lần hoán đổi dòng, ta có~\cite{strang2023}:
+\begin{equation}
+    \det(\mat{A}) = (-1)^s \prod_{i=1}^{n} u_{ii}.
+    \label{eq:det}
+\end{equation}
+
+Công thức này dựa trên ba tính chất quan trọng. Thứ nhất, phép cộng bội dòng (thao tác chính trong khử Gauss) \textbf{không làm thay đổi} giá trị định thức. Thứ hai, mỗi phép hoán đổi dòng \textbf{đổi dấu} định thức, nên sau $s$ lần hoán đổi ta nhân thêm hệ số $(-1)^s$. Thứ ba, định thức của ma trận tam giác bằng \textbf{tích các phần tử đường chéo chính}~\cite{golub2013}.
+
+Phương pháp này có độ phức tạp $\mathcal{O}(n^3)$, hiệu quả hơn rất nhiều so với công thức khai triển Laplace truyền thống có độ phức tạp $\mathcal{O}(n!)$~\cite{strang2023}. Nếu trong quá trình khử không thể tìm được pivot khác $0$ cho một cột nào đó, kết luận ngay rằng $\det(\mat{A}) = 0$ --- ma trận suy biến.
+
+\subsubsection{Tìm ma trận nghịch đảo bằng Gauss--Jordan}
+
+Ma trận vuông $\mat{A} \in \R^{n \times n}$ khả nghịch khi và chỉ khi $\det(\mat{A}) \neq 0$. Phương pháp Gauss--Jordan tìm $\mat{A}^{-1}$ bằng cách ghép $\mat{A}$ với ma trận đơn vị $\mat{I}_n$ và áp dụng các phép biến đổi dòng cho đến khi vế trái trở thành $\mat{I}_n$~\cite{strang2023}:
+\begin{equation}
+    [\mat{A} \mid \mat{I}_n] \;\xrightarrow{\text{Gauss--Jordan}}\; [\mat{I}_n \mid \mat{A}^{-1}].
+    \label{eq:inverse}
+\end{equation}
+
+Về mặt đại số, mỗi phép biến đổi dòng tương ứng với phép nhân bên trái bởi một ma trận sơ cấp $\mat{E}_k$. Nếu chuỗi biến đổi đưa $\mat{A}$ về $\mat{I}_n$, ta có $\mat{E}_t \cdots \mat{E}_2 \mat{E}_1 \mat{A} = \mat{I}_n$, suy ra $\mat{A}^{-1} = \mat{E}_t \cdots \mat{E}_2 \mat{E}_1$. Khối bên phải của ma trận ghép tích lũy chính xác tích này, và do đó chứa ma trận nghịch đảo~\cite{golub2013}.
+
+Quy trình cài đặt bao gồm ba thao tác lặp lại cho mỗi cột: chọn pivot và hoán đổi dòng (nếu cần), chuẩn hóa dòng pivot về $1$ bằng cách chia cho giá trị pivot, sau đó khử toàn bộ các phần tử khác trong cột pivot (cả phía trên và phía dưới) để đạt RREF. Nếu tại bước nào đó không thể tìm được pivot khác $0$, kết luận rằng $\mat{A}$ suy biến và không có nghịch đảo.
+
+\subsubsection{Hạng ma trận và cơ sở các không gian con}
+
+\begin{mydef}{Hạng ma trận}{rank_def}
+Hạng của ma trận $\mat{A}$, ký hiệu $\rank(\mat{A})$, bằng số cột pivot trong dạng REF hoặc RREF của $\mat{A}$. Giá trị này đồng thời bằng số chiều của không gian cột $C(\mat{A})$, của không gian dòng $R(\mat{A})$, và thỏa mãn định lý hạng--nullity: $\rank(\mat{A}) + \dim N(\mat{A}) = n$~\cite{strang2023}.
+\end{mydef}
+
+Sau khi đưa ma trận $\mat{A}$ về dạng RREF, ba không gian con cơ bản được trích xuất như sau.
+
+\textbf{Không gian cột} $C(\mat{A})$ được sinh bởi các \textbf{cột pivot của ma trận gốc} $\mat{A}$ (chứ không phải từ RREF). Lý do là phép biến đổi dòng bảo toàn quan hệ phụ thuộc tuyến tính giữa các cột, nhưng thay đổi giá trị cụ thể của chúng; do đó các cột tương ứng trong $\mat{A}$ gốc mới tạo thành cơ sở đúng cho $C(\mat{A})$~\cite{strang2023}.
+
+\textbf{Không gian dòng} $R(\mat{A})$ được sinh bởi các \textbf{dòng khác $0$ trong RREF}. Khác với không gian cột, phép biến đổi dòng bảo toàn không gian dòng, nên các dòng khác $0$ của RREF trực tiếp tạo thành cơ sở cho $R(\mat{A})$.
+
+\textbf{Không gian nghiệm} $N(\mat{A})$ (còn gọi là \textit{null space}) là tập nghiệm của hệ thuần nhất $\mat{A}\mat{x} = \mat{0}$. Từ RREF, ta nhận diện tập chỉ số biến tự do $F$. Mỗi biến pivot $x_p$ được biểu diễn theo các biến tự do~\cite{strang2023}:
+\begin{equation}
+    x_p = -\sum_{j \in F} r_{pj}\,x_j,
+\end{equation}
+trong đó $r_{pj}$ là phần tử tương ứng trong RREF. Lần lượt đặt mỗi biến tự do $x_k$ bằng $1$ (các biến tự do khác bằng $0$), ta thu được một vectơ nghiệm cơ sở. Tập hợp các vectơ này tạo thành cơ sở cho $N(\mat{A})$, với số chiều bằng $n - \rank(\mat{A})$.
+
+\subsection{Tổng Kết}
+
+Bảng~\ref{tab:part1_summary} tóm tắt tất cả các thao tác tính toán trong Phần~1 cùng cơ sở toán học và độ phức tạp tương ứng.
+
+\begin{table}[H]
+\centering
+\caption{Tổng hợp các bài toán và phương pháp giải trong Phần~1}
+\label{tab:part1_summary}
+\renewcommand{\arraystretch}{1.5}
+\setlength{\tabcolsep}{8pt}
+\begin{tabular}{p{3.5cm}p{4.5cm}p{2.5cm}p{3cm}}
+\toprule
+\textbf{Bài toán} & \textbf{Phương pháp} & \textbf{Độ phức tạp} & \textbf{Kỹ thuật bổ trợ} \\
+\midrule
+Giải hệ $\mat{A}\mat{x}=\mat{b}$ & Khử Gauss + thế ngược & $\mathcal{O}(n^3)$ & Partial pivoting \\
+Tính $\det(\mat{A})$ & Khử Gauss $\to$ tích đường chéo & $\mathcal{O}(n^3)$ & Đếm hoán đổi dòng \\
+Tìm $\mat{A}^{-1}$ & Gauss--Jordan trên $[\mat{A}\mid\mat{I}]$ & $\mathcal{O}(n^3)$ & RREF + pivoting \\
+$\rank(\mat{A})$ và cơ sở & Đưa về RREF & $\mathcal{O}(mn^2)$ & Trích pivot/biến tự do \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Phép khử Gauss với partial pivoting đóng vai trò nền tảng cho toàn bộ nhóm bài toán trong Phần~1. Từ một quy trình khử duy nhất, ta có thể đồng thời giải hệ phương trình, tính định thức, kiểm tra tính khả nghịch, và phân tích cấu trúc không gian con của ma trận --- thể hiện sức mạnh thống nhất của phương pháp. Các phần tiếp theo của đồ án (Phần~2: phân rã QR và SVD, Phần~3: phân tích ổn định số) sẽ xây dựng trên nền tảng này để mở rộng sang các bài toán phức tạp hơn.

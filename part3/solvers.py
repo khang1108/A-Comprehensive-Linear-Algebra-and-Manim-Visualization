@@ -12,7 +12,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from part1.gaussian import back_substitution, gaussian_eliminate
-from Part2.QR_SVD import dot, identity, norm, svd, transpose
+from part2.QR_SVD import dot, identity, norm, svd, transpose
 
 
 # Numerical thresholds used across solvers.
@@ -84,7 +84,7 @@ def is_strictly_row_diagonally_dominant(A: List[List[float]]) -> bool:
 def qr_householder_decompose(A: List[List[float]], tol: float = DEFAULT_TOL_QR) -> tuple[List[List[float]], List[List[float]]]:
     """
     QR decomposition via Householder reflections.
-    Reuses dot, norm, identity, transpose from Part2.
+    Reuses dot, norm, identity, transpose from part2.
 
     Returns Q (m x m orthogonal), R (m x n upper-triangular).
     """
@@ -143,8 +143,8 @@ def solve_gauss(A: List[List[float]], b: List[float]) -> SolverResult:
 
     runtime = perf_counter() - start
 
-    # In Part1, "Singular Solution" actually means a unique solution.
-    if status != "Singular Solution":
+    # back_substitution trả về thông báo tiếng Việt khi có nghiệm duy nhất
+    if status != "Hệ có nghiệm duy nhất":
         return SolverResult(
             method = "Gauss",
             x = [],
@@ -263,7 +263,7 @@ def solve_qr_householder(
         2. Compute y = Q^T b.
         3. Solve Rx = y using back substitution (Part 1).
 
-    Utility functions from Part2 (dot, norm, identity, transpose)
+    Utility functions from part2 (dot, norm, identity, transpose)
     are reused in the QR factorization step.
     """
     start = perf_counter()
@@ -279,7 +279,7 @@ def solve_qr_householder(
         y = y_full[:n]
 
         x, status = back_substitution(R, y)
-        if status != "Singular Solution":
+        if status != "Hệ có nghiệm duy nhất":
             raise ValueError(status)
 
         x = [float(v) for v in x]
@@ -346,7 +346,7 @@ def solve_svd(
             residual = residual_norm(A_mat, x, b_vec),
             iterations = 0,
             runtime_sec = perf_counter() - start,
-            message = f"Solved using Part2 SVD (effective rank = {rank}).",
+            message = f"Solved using part2 SVD (effective rank = {rank}).",
         )
     except Exception as exc:
         return SolverResult(

@@ -1,0 +1,73 @@
+\section{Kết Luận và Bài Học}
+
+\subsection{Tổng Kết Đồ Án}
+Qua quá trình thực hiện đồ án "Phép khử Gauss, Phân rã Ma trận và Phân tích Hiệu năng", nhóm chúng em đã đạt được những kết quả quan trọng sau:
+\begin{itemize}
+    \item \textbf{Cài đặt thành công nền tảng Đại số tuyến tính:} Xây dựng hoàn chỉnh từ đầu (\textit{from scratch}) các thuật toán cốt lõi bao gồm phép khử Gauss với Partial Pivoting, giải hệ phương trình (Back Substitution), tính định thức, ma trận nghịch đảo và tìm cơ sở không gian.
+    \item \textbf{Hiểu sâu sắc về Phân rã ma trận:} Nắm vững và cài đặt thành công các phương pháp phân rã tiên tiến như QR (Gram-Schmidt, Householder) và SVD, cùng với việc chéo hóa ma trận. Các phương pháp này được củng cố mạnh mẽ về mặt trực quan thông qua video mô phỏng bằng thư viện \textbf{Manim}.
+    \item \textbf{Phân tích độ ổn định số học:} Thông qua thực nghiệm đo đạc thời gian và sai số trên các ma trận đặc thù (ma trận đối xứng xác định dương - SPD và ma trận Hilbert), nhóm đã chứng minh được sự khác biệt giữa lý thuyết độ phức tạp $\mathcal{O}(n^3)$ và thời gian chạy thực tế, cũng như tác động tàn phá của sai số làm tròn đối với các ma trận có số điều kiện (\textit{condition number}) lớn.
+\end{itemize}
+
+\subsection{Những Khó Khăn Gặp Phải}
+Trong quá trình thực hiện đồ án, nhóm đã đối mặt với một số thách thức nhất định:
+\begin{itemize}
+    \item \textbf{Sai số dấu phẩy động (Floating-point errors):} Khi làm việc với ma trận Hilbert ở kích thước lớn, các phương pháp phân rã bị tích lũy sai số nghiêm trọng. Điều này đòi hỏi nhóm phải nghiên cứu sâu về các kỹ thuật giảm thiểu sai số như Partial Pivoting và phép biến đổi Householder (thay vì Gram-Schmidt cổ điển).
+    \item \textbf{Tối ưu hóa hiệu năng bằng Python:} Vì yêu cầu không sử dụng trực tiếp các hàm có sẵn của NumPy/SciPy cho cốt lõi thuật toán, việc đảm bảo thời gian chạy hợp lý cho ma trận kích thước lớn ($n \ge 500$) đòi hỏi code thuần Python phải được vector hóa tối đa trong giới hạn cho phép.
+    \item \textbf{Trực quan hóa với Manim:} Đây là một thư viện mạnh mẽ, có khả năng trực quan hóa các bài toán một cách rõ ràng, dễ hiểu và đẹp mắt. Tuy nhiên, để làm được một video hoàn chỉnh, nhóm đã phải bỏ rất nhiều thời gian để nghiên cứu hướng dẫn từ kênh 3Blue1Brown\footnote{3Blue1Brown là kênh YouTube nổi tiếng về toán học trực quan do Grant Sanderson sáng lập. Anh cũng chính là tác giả đã tạo ra thư viện Manim.}.
+\end{itemize}
+
+\subsection{Bài Học Rút Ra}
+\begin{enumerate}
+    \item \textbf{Sự khác biệt giữa Lý thuyết và Thực hành:} Một thuật toán đúng về mặt toán học (như khử Gauss cơ bản) chưa chắc đã sử dụng được trong thực tế nếu không có kỹ thuật pivoting để đối phó với độ chính xác hữu hạn của máy tính.
+    \item \textbf{Tầm quan trọng của Condition Number:} Ma trận Hilbert là một "bài test" kinh điển giúp nhóm thấm nhuần khái niệm \textit{ill-conditioned}. Mọi phép toán trên nó đều rất nhạy cảm, giúp nhóm trân trọng giá trị của phân rã SVD trong việc chẩn đoán hệ thống.
+    \item \textbf{Kỹ năng làm việc nhóm và Quản lý mã nguồn:} Việc chia nhỏ các module, sử dụng Git/GitHub để quản lý tiến độ, cùng với LaTeX để tổng hợp báo cáo đã giúp nhóm nâng cao kỹ năng làm việc cộng tác trong môi trường kỹ thuật phần mềm thực thụ.
+\end{enumerate}
+
+\newpage
+\section{Phân Công Công Việc}
+
+Đồ án được chia thành các phần hành cụ thể và được phối hợp thực hiện bởi tất cả các thành viên trong nhóm. Bảng dưới đây tóm tắt vai trò và đóng góp của từng thành viên:
+
+\begin{table}[H]
+    \centering
+    \renewcommand{\arraystretch}{1.5} % Tăng khoảng cách dòng
+    \begin{tabular}{|p{0.5\textwidth}|>{\centering\arraybackslash}p{0.2\textwidth}|>{\centering\arraybackslash}p{0.2\textwidth}|}
+        \hline
+        \rowcolor{primaryblue!20}
+        \textbf{Thành viên \& MSSV} & \textbf{Vai trò} & \textbf{Tỷ lệ hoàn thành} \\ \hline
+        \textbf{Khang Phuc Nguyen} (24120068) \newline
+        - Chịu trách nhiệm quản lý, và phân công công việc cho các thành viên \newline
+        - Thiết kế kiến trúc code tổng thể (Project Architecture) \newline
+        - Hoàn tất báo cáo tổng quan của toàn bộ đồ án \newline
+        - Đảm bảo chất lượng báo cáo LaTeX từng phần, rà soát code của từng người (Reviewer \& Editor) \newline
+        - Làm video Manim của Phần 2.
+        - Cài đặt Gauss-Elimination
+        & \textbf{Leader} & 100\% \\ \hline
+        
+        \textbf{Nghia Trong Hoang} (24120103) \newline 
+        - Phần 1: Cài đặt hàm tìm hạng (rank), cơ sở không gian dòng/cột. \newline
+        - Viết báo cáo lý thuyết cho Phần 1. \newline
+        - Phần 3: Thực hiện phân tích, đưa ra nhận xét và viết Kết luận phần 1.
+        & Member & 100\% \\ \hline
+        
+        \textbf{Nhat Hoang Mai} (24120109) \newline 
+        - Phần 1: Cài đặt tính \texttt{det(A)} bằng phép khử Gauss. \newline
+        - Phần 2: Phụ trách viết lý thuyết cho phân rã SVD và QR, vẽ hình TikZ minh họa. \newline
+        - Phần 3: Cài đặt thuật toán các phương pháp lặp.
+        & Member & 100\% \\ \hline
+        
+        \textbf{Nhat Hoang Nguyen} (24120100) \newline 
+        - Phần 1: Cài đặt \texttt{back\_substitution} và khung chính \texttt{gaussian.py}. \newline
+        - Phần 2: Xây dựng code kiểm chứng các thuật toán phân rã QR và SVD (\texttt{verify.py}). \newline
+        - Phần 3: Lập trình kịch bản chạy thực nghiệm (\texttt{benchmark.py}).
+        & Member & 100\% \\ \hline
+        
+        \textbf{Long Nhat Phung Vo} (2412088) \newline 
+        - Phần 1: Cài đặt thuật toán tìm ma trận nghịch đảo (inverse). \newline
+        - Phần 2: Cài đặt trực tiếp (from scratch) thuật toán phân rã QR và SVD. \newline
+        - Phần 3: Phân tích tính ổn định số của các phương pháp.
+        & Member & 100\% \\ \hline
+    \end{tabular}
+    \caption{Bảng phân công công việc và đánh giá mức độ hoàn thành}
+    \label{tab:task_assignment}
+\end{table}

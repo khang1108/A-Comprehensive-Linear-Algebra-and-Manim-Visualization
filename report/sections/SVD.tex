@@ -1,0 +1,686 @@
+\subsection{Phân Rã Giá Trị Kỳ Dị \- Singular Value Decomposition}
+\subsubsection{Giới Thiệu và Đặt Vấn Đề}
+
+\subsubsection{Bối Cảnh và Động Lực}
+
+Phân rã QR cho phép xử lý tốt các ma trận có hạng đầy đủ cột, nhưng nhiều bài toán
+thực tế đòi hỏi phân tích sâu hơn: ma trận có thể là hình chữ nhật tùy ý, có hạng
+thấp, hay bị nhiễu. \textbf{Phân rã giá trị kỳ dị} (\textit{Singular Value
+Decomposition}, SVD) là công cụ mạnh mẽ nhất của đại số tuyến tính số, áp dụng
+được cho \emph{mọi ma trận thực} $\mat{A} \in \R^{m \times n}$~\cite{trefethen1997}.
+
+SVD không chỉ là một công cụ tính toán mà còn mang ý nghĩa hình học sâu sắc: nó
+tiết lộ cấu trúc bên trong của một phép biến đổi tuyến tính thông qua các hướng
+và độ giãn đặc trưng. Kết quả là một phân rã duy nhất (theo nghĩa chuẩn hóa) phản
+ánh đầy đủ mọi tính chất đại số và hình học của ma trận.
+
+\subsubsection{Vấn Đề Cần Giải Quyết}
+
+\begin{tcolorbox}[enhanced, colback=blue!8!white, colframe=primaryblue,
+    title=\textbf{Bài toán tổng quát}, fonttitle=\bfseries]
+Cho ma trận $\mat{A} \in \R^{m \times n}$ tùy ý (không cần vuông, không cần
+hạng đầy đủ). Tìm biểu diễn:
+\[
+    \mat{A} = \mat{U}\,\boldsymbol{\Sigma}\,\mat{V}^T,
+\]
+trong đó:
+\begin{itemize}[noitemsep]
+    \item $\mat{U} \in \R^{m \times m}$ là ma trận trực giao,
+    \item $\boldsymbol{\Sigma} \in \R^{m \times n}$ là ma trận ``đường chéo'' với
+          các phần tử $\sigma_1 \geq \sigma_2 \geq \cdots \geq 0$,
+    \item $\mat{V} \in \R^{n \times n}$ là ma trận trực giao.
+\end{itemize}
+\end{tcolorbox}
+
+\vspace{0.5em}
+Từ biểu diễn này, nhiều bài toán quan trọng được giải quyết hiệu quả:
+\begin{enumerate}[noitemsep]
+    \item \textbf{Xấp xỉ hạng thấp:} tìm ma trận hạng $k$ gần $\mat{A}$ nhất
+          (nén dữ liệu, giảm chiều).
+    \item \textbf{Bình phương tối thiểu:} giải hệ $\mat{A}\mat{x} \approx \mat{b}$
+          ngay cả khi $\mat{A}$ kỳ dị hoặc chữ nhật.
+    \item \textbf{Phân tích thành phần chính (PCA):} tìm các hướng biến thiên lớn
+          nhất trong dữ liệu.
+    \item \textbf{Xử lý ảnh, hệ gợi ý, xử lý ngôn ngữ tự nhiên}, v.v.
+\end{enumerate}
+
+\subsubsection{Cơ Sở Lý Thuyết}
+
+\subsubsection{Ma Trận Trực Giao và Tính Chất}
+
+\begin{mydef}{Ma trận trực giao}{}
+Ma trận $\mat{Q} \in \R^{n \times n}$ là \textbf{trực giao} nếu
+$\mat{Q}^T\mat{Q} = \mat{Q}\mat{Q}^T = \mat{I}_n$, tức $\mat{Q}^{-1} = \mat{Q}^T$.
+\end{mydef}
+
+\begin{mythm}{Bảo toàn chuẩn}{}
+Với ma trận trực giao $\mat{Q}$: $\norm{\mat{Q}\mat{x}}_2 = \norm{\mat{x}}_2$ với
+mọi $\mat{x}$.
+\end{mythm}
+
+\begin{proof}
+$\norm{\mat{Q}\mat{x}}_2^2 = (\mat{Q}\mat{x})^T(\mat{Q}\mat{x}) =
+\mat{x}^T\underbrace{\mat{Q}^T\mat{Q}}_{=\,\mat{I}}\mat{x} = \norm{\mat{x}}_2^2$.
+\end{proof}
+
+\subsubsection{Ma Trận Đối Xứng Xác Định Không Âm}
+
+\begin{mydef}{Ma trận đối xứng xác định không âm (SPSD)}{}
+Ma trận $\mat{S} \in \R^{n \times n}$ là \textbf{đối xứng xác định không âm}
+(\textit{Symmetric Positive SemiDefinite}, SPSD) nếu $\mat{S}^T = \mat{S}$ và
+$\mat{x}^T\mat{S}\mat{x} \geq 0$ với mọi $\mat{x} \in \R^n$.
+\end{mydef}
+
+\begin{myprop}{$\mat{A}^T\mat{A}$ là SPSD}{}
+Với mọi $\mat{A} \in \R^{m \times n}$, ma trận $\mat{A}^T\mat{A}$ là đối xứng
+xác định không âm.
+\end{myprop}
+
+\begin{proof}
+\textit{Đối xứng:} $(\mat{A}^T\mat{A})^T = \mat{A}^T(\mat{A}^T)^T = \mat{A}^T\mat{A}$. \\
+\textit{Xác định không âm:} $\mat{x}^T(\mat{A}^T\mat{A})\mat{x} =
+(\mat{A}\mat{x})^T(\mat{A}\mat{x}) = \norm{\mat{A}\mat{x}}_2^2 \geq 0$.
+\end{proof}
+
+\begin{mythm}{Định lý phổ cho ma trận đối xứng}{}
+Mọi ma trận đối xứng $\mat{S} \in \R^{n \times n}$ đều có thể chéo hóa trực giao:
+$\mat{S} = \mat{V}\boldsymbol{\Lambda}\mat{V}^T$ với $\mat{V}$ trực giao và
+$\boldsymbol{\Lambda} = \operatorname{diag}(\lambda_1, \ldots, \lambda_n)$ chứa
+các giá trị riêng thực. Nếu $\mat{S}$ là SPSD thì $\lambda_i \geq 0$ với mọi $i$.
+\end{mythm}
+
+\subsubsection{Định Nghĩa Giá Trị Kỳ Dị}
+
+\begin{mydef}{Giá trị kỳ dị và vectơ kỳ dị}{}
+Cho $\mat{A} \in \R^{m \times n}$. Áp dụng định lý phổ cho $\mat{A}^T\mat{A}$ với
+các giá trị riêng $\lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_n \geq 0$:
+\begin{itemize}[noitemsep]
+    \item \textbf{Giá trị kỳ dị:} $\sigma_i = \sqrt{\lambda_i(\mat{A}^T\mat{A})}$,
+          thường sắp xếp $\sigma_1 \geq \sigma_2 \geq \cdots \geq \sigma_n \geq 0$.
+    \item \textbf{Vectơ kỳ dị phải:} các cột $\mat{v}_i$ của ma trận $\mat{V}$
+          trong phân tích $\mat{A}^T\mat{A} = \mat{V}\boldsymbol{\Lambda}\mat{V}^T$.
+    \item \textbf{Vectơ kỳ dị trái:} $\mat{u}_i = \frac{1}{\sigma_i}\mat{A}\mat{v}_i$
+          (với $\sigma_i > 0$).
+\end{itemize}
+\end{mydef}
+
+\subsubsection{Phân Rã Giá Trị Kỳ Dị — Định Lý và Chứng Minh}
+
+\subsubsection{Phát Biểu Định Lý}
+
+\begin{mythm}{Phân rã SVD (Full SVD)}{svd_exist}
+Với mọi $\mat{A} \in \R^{m \times n}$, tồn tại các ma trận trực giao
+$\mat{U} \in \R^{m \times m}$, $\mat{V} \in \R^{n \times n}$ và ma trận
+$\boldsymbol{\Sigma} \in \R^{m \times n}$ với $\Sigma_{ij} = 0$ khi $i \neq j$
+và $\sigma_1 \geq \sigma_2 \geq \cdots \geq \sigma_p \geq 0$ ($p = \min(m,n)$)
+trên đường chéo, sao cho:
+\[
+    \mat{A} = \mat{U}\,\boldsymbol{\Sigma}\,\mat{V}^T.
+\]
+Các $\sigma_i$ là duy nhất (gọi là \textbf{giá trị kỳ dị} của $\mat{A}$).
+\end{mythm}
+
+\begin{mydef}{SVD gọn (Thin/Economy SVD)}{}
+Nếu $r = \rank(\mat{A})$, định nghĩa:
+$\mat{U}_r = [\mat{u}_1 \mid \cdots \mid \mat{u}_r] \in \R^{m \times r}$,
+$\boldsymbol{\Sigma}_r = \operatorname{diag}(\sigma_1, \ldots, \sigma_r) \in \R^{r \times r}$,
+$\mat{V}_r = [\mat{v}_1 \mid \cdots \mid \mat{v}_r] \in \R^{n \times r}$.
+Khi đó \textbf{SVD gọn} của $\mat{A}$ là:
+\[
+    \mat{A} = \mat{U}_r\,\boldsymbol{\Sigma}_r\,\mat{V}_r^T.
+\]
+Dạng này tiết kiệm hơn vì chỉ lưu $r$ cột/hàng thay vì toàn bộ $m \times n$.
+\end{mydef}
+
+\begin{note}[Full SVD so với Thin SVD]
+Full SVD giữ toàn bộ ma trận trực giao $\mat{U}$ và $\mat{V}$, bao gồm cả các
+cột ứng với $\sigma_i = 0$. Thin SVD chỉ giữ $r$ cột hữu ích.
+Trong tính toán, Thin SVD thường được dùng vì hiệu quả hơn.
+\end{note}
+
+\subsubsection{Chứng Minh Định Lý}
+
+\begin{proof}
+Chứng minh bằng cách \emph{xây dựng tường minh} $\mat{U}$, $\boldsymbol{\Sigma}$,
+$\mat{V}$~\cite{golub2013}.
+
+\medskip
+\noindent\textbf{Bước 1: Phân tích $\mat{A}^T\mat{A}$ và định nghĩa các $\sigma_i$.}
+
+Theo Mệnh đề~2.1, $\mat{A}^T\mat{A}$ là SPSD. Theo định lý phổ:
+\[
+    \mat{A}^T\mat{A} = \mat{V}\boldsymbol{\Lambda}\mat{V}^T,
+\]
+với $\mat{V} \in \R^{n \times n}$ trực giao và $\boldsymbol{\Lambda} =
+\operatorname{diag}(\lambda_1, \ldots, \lambda_n)$, $\lambda_1 \geq \cdots \geq \lambda_r
+> 0 = \lambda_{r+1} = \cdots = \lambda_n$ ($r = \rank(\mat{A})$).
+Đặt $\sigma_i = \sqrt{\lambda_i}$ cho $i = 1, \ldots, r$.
+
+\medskip
+\noindent\textbf{Bước 2: Xây dựng các vectơ kỳ dị trái $\mat{u}_i$ ($i \leq r$).}
+
+Với mỗi $i = 1, \ldots, r$, đặt:
+\[
+    \mat{u}_i \;=\; \frac{1}{\sigma_i}\mat{A}\mat{v}_i.
+\]
+
+\medskip
+\noindent\textbf{Bước 3: $\{\mat{u}_1, \ldots, \mat{u}_r\}$ là tập trực chuẩn.}
+
+Với $1 \leq i, j \leq r$:
+\[
+    \inner{\mat{u}_i}{\mat{u}_j}
+    = \frac{1}{\sigma_i\sigma_j}\mat{v}_i^T\mat{A}^T\mat{A}\mat{v}_j
+    = \frac{1}{\sigma_i\sigma_j}\mat{v}_i^T\underbrace{(\mat{A}^T\mat{A}\mat{v}_j)}_{=\,\lambda_j\mat{v}_j}
+    = \frac{\lambda_j}{\sigma_i\sigma_j}\underbrace{\mat{v}_i^T\mat{v}_j}_{=\,\delta_{ij}}.
+\]
+Khi $i = j$: $\lambda_i/\sigma_i^2 = 1$. \quad Khi $i \neq j$: $0$.
+Vậy $\inner{\mat{u}_i}{\mat{u}_j} = \delta_{ij}$.
+
+\medskip
+\noindent\textbf{Bước 4: Với $i > r$, $\mat{A}\mat{v}_i = \mat{0}$.}
+
+Ta cần bổ đề: $\operatorname{null}(\mat{A}^T\mat{A}) = \operatorname{null}(\mat{A})$.
+\begin{itemize}[noitemsep, topsep=2pt]
+    \item[$(\subseteq)$] Nếu $\mat{A}\mat{x} = \mat{0}$ thì $\mat{A}^T\mat{A}\mat{x} = \mat{0}$.
+    \item[$(\supseteq)$] Nếu $\mat{A}^T\mat{A}\mat{x} = \mat{0}$ thì $\norm{\mat{A}\mat{x}}_2^2 = \mat{x}^T\mat{A}^T\mat{A}\mat{x} = 0$, suy ra $\mat{A}\mat{x} = \mat{0}$.
+\end{itemize}
+Vì $i > r$, $\lambda_i = 0$ nên $\mat{v}_i \in \operatorname{null}(\mat{A}^T\mat{A}) =
+\operatorname{null}(\mat{A})$, tức $\mat{A}\mat{v}_i = \mat{0}$.
+
+\medskip
+\noindent\textbf{Bước 5: Mở rộng thành cơ sở trực chuẩn của $\R^m$.}
+
+$\{\mat{u}_1, \ldots, \mat{u}_r\}$ là tập trực chuẩn trong $\R^m$. Mở rộng bằng
+Gram--Schmidt thành cơ sở trực chuẩn đầy đủ $\{\mat{u}_1, \ldots, \mat{u}_m\}$.
+Đặt $\mat{U} = [\mat{u}_1 \mid \cdots \mid \mat{u}_m] \in \R^{m \times m}$ (trực giao).
+
+\medskip
+\noindent\textbf{Bước 6: Xây dựng $\boldsymbol{\Sigma}$ và kiểm tra $\mat{A} = \mat{U}\boldsymbol{\Sigma}\mat{V}^T$.}
+
+Đặt $\boldsymbol{\Sigma} \in \R^{m \times n}$ với $\Sigma_{ii} = \sigma_i$ ($i = 1,\ldots,r$),
+các phần tử còn lại bằng 0. Xét tích $\mat{A}\mat{V}$:
+\[
+    \mat{A}\mat{V} = [\mat{A}\mat{v}_1 \mid \cdots \mid \mat{A}\mat{v}_n]
+    = [\sigma_1\mat{u}_1 \mid \cdots \mid \sigma_r\mat{u}_r \mid \mat{0} \mid \cdots \mid \mat{0}]
+    = \mat{U}\boldsymbol{\Sigma}.
+\]
+Vì $\mat{V}$ trực giao ($\mat{V}^{-1} = \mat{V}^T$):
+\[
+    \mat{A} = \mat{U}\boldsymbol{\Sigma}\mat{V}^T.
+\]
+
+\textbf{Tính duy nhất của $\sigma_i$:} Vì $\mat{A}^T\mat{A} = \mat{V}\boldsymbol{\Sigma}^T
+\boldsymbol{\Sigma}\mat{V}^T$ và $\boldsymbol{\Sigma}^T\boldsymbol{\Sigma} =
+\operatorname{diag}(\sigma_1^2,\ldots,\sigma_r^2,0,\ldots,0)$, các $\sigma_i^2$ là
+các giá trị riêng dương của $\mat{A}^T\mat{A}$, xác định duy nhất. Do đó $\sigma_i$
+duy nhất.
+\end{proof}
+
+\begin{mycor}{Liên hệ với eigendecomposition}{}
+Từ $\mat{A} = \mat{U}\boldsymbol{\Sigma}\mat{V}^T$, ta suy ra hai phân tích chéo:
+\begin{align*}
+    \mat{A}^T\mat{A} &= \mat{V}\,(\boldsymbol{\Sigma}^T\boldsymbol{\Sigma})\,\mat{V}^T
+    \quad \text{(giá trị riêng của $\mat{A}^T\mat{A}$ là $\sigma_i^2$)},\\
+    \mat{A}\mat{A}^T &= \mat{U}\,(\boldsymbol{\Sigma}\boldsymbol{\Sigma}^T)\,\mat{U}^T
+    \quad \text{(giá trị riêng khác 0 của $\mat{A}\mat{A}^T$ cũng là $\sigma_i^2$)}.
+\end{align*}
+Đây là cơ sở của các thuật toán tính SVD qua eigendecomposition~\cite{trefethen1997}.
+\end{mycor}
+
+\subsubsection{Tính Chất Hình Học của SVD}
+
+\subsubsection{SVD = Quay -- Co Giãn -- Quay}
+
+Mọi phép biến đổi tuyến tính $\mat{x} \mapsto \mat{A}\mat{x}$ đều có thể phân
+tích thành ba bước kế tiếp~\cite{strang2023}:
+\[
+    \mat{x}
+    \;\xrightarrow{\quad\mat{V}^T\quad}\;
+    \mat{V}^T\mat{x}
+    \;\xrightarrow{\quad\boldsymbol{\Sigma}\quad}\;
+    \boldsymbol{\Sigma}\mat{V}^T\mat{x}
+    \;\xrightarrow{\quad\mat{U}\quad}\;
+    \mat{U}\boldsymbol{\Sigma}\mat{V}^T\mat{x} = \mat{A}\mat{x}.
+\]
+\begin{itemize}[noitemsep]
+    \item $\mat{V}^T$: \textbf{phép quay/phản xạ} trong $\R^n$ (chuyển cơ sở
+          theo $\{\mat{v}_i\}$).
+    \item $\boldsymbol{\Sigma}$: \textbf{co giãn} theo các trục tọa độ với tỉ lệ
+          $\sigma_1, \sigma_2, \ldots$ (và có thể thay đổi chiều $n \to m$).
+    \item $\mat{U}$: \textbf{phép quay/phản xạ} trong $\R^m$ (chuyển sang cơ sở
+          $\{\mat{u}_i\}$).
+\end{itemize}
+
+\subsubsection{Hình Ảnh của Hình Cầu Đơn Vị}
+
+\begin{mythm}{Hình cầu đơn vị $\to$ Hyperellipsoid}{}
+Tập $\{\mat{A}\mat{x} : \norm{\mat{x}}_2 = 1\}$ (hình ảnh của hình cầu đơn vị
+qua $\mat{A}$) là một hyperellipsoid với các bán trục $\sigma_1 \geq \sigma_2 \geq
+\cdots \geq \sigma_r > 0$ theo các hướng $\mat{u}_1, \mat{u}_2, \ldots, \mat{u}_r$.
+\end{mythm}
+
+\begin{proof}
+Đặt $\mat{y} = \mat{V}^T\mat{x}$. Vì $\mat{V}$ trực giao, $\norm{\mat{x}}_2 = 1
+\Leftrightarrow \norm{\mat{y}}_2 = 1$.
+Tập $\{\mat{U}\boldsymbol{\Sigma}\mat{y} : \norm{\mat{y}}_2 = 1\}$ bằng tập
+$\{\mat{U}\mat{z} : \mat{z} = \boldsymbol{\Sigma}\mat{y},\, \norm{\mat{y}}_2 = 1\}$.
+Với $\mat{y} = (y_1, \ldots, y_n)^T$ và $\norm{\mat{y}}_2 = 1$:
+\[
+    \mat{z} = \boldsymbol{\Sigma}\mat{y}
+    \implies z_i = \sigma_i y_i,
+    \implies \sum_{i=1}^r \frac{z_i^2}{\sigma_i^2} = \sum_{i=1}^r y_i^2 \leq 1.
+\]
+Tập $\{\mat{z}\}$ là ellipsoid căn chuẩn. Nhân với $\mat{U}$ (phép quay) cho
+ellipsoid với bán trục $\sigma_i$ theo hướng $\mat{u}_i$.
+\end{proof}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.92, >=Stealth]
+  % Panel 1: Input space (unit circle)
+  \begin{scope}[xshift=0cm]
+    \draw[primaryblue!15, fill=primaryblue!6, thick, primaryblue]
+      (0,0) circle(1);
+    % Grid lines
+    \draw[gray!35, thin] (-1.4,0)--(1.4,0);
+    \draw[gray!35, thin] (0,-1.4)--(0,1.4);
+    % v1 at 45 degrees
+    \draw[->, very thick, primaryblue] (0,0)
+      -- ({cos(45)},{sin(45)})
+      node[above right, primaryblue, font=\small] {$\mathbf{v}_1$};
+    % v2 at 135 degrees
+    \draw[->, very thick, accentblue] (0,0)
+      -- ({cos(135)},{sin(135)})
+      node[above left, accentblue, font=\small] {$\mathbf{v}_2$};
+    \fill[black] (0,0) circle(1.5pt);
+    \node[font=\small, below] at (0,-1.65)
+      {\textit{Đầu vào}: $\|\mathbf{x}\|=1$};
+  \end{scope}
+
+  % Arrow label (V^T then Sigma)
+  \draw[->, very thick, darkgray] (1.2,0) -- (2.1,0);
+  \node[above, darkgray, font=\footnotesize] at (1.65, 0.12)
+    {$\boldsymbol{\Sigma}\mathbf{V}^T$};
+
+  % Panel 2: After Sigma*V^T (axis-aligned ellipse)
+  \begin{scope}[xshift=3.8cm]
+    \draw[successgreen!15, fill=successgreen!6, thick, successgreen!70!black]
+      (0,0) ellipse(1.6 and 0.55);
+    % Grid lines
+    \draw[gray!35, thin] (-1.9,0)--(1.9,0);
+    \draw[gray!35, thin] (0,-0.85)--(0,0.85);
+    % sigma_1 annotation
+    \draw[<->, successgreen!70!black, thick] (0,-0.78) -- (1.6,-0.78);
+    \node[below, successgreen!70!black, font=\footnotesize] at (0.8,-0.78)
+      {$\sigma_1$};
+    % sigma_2 annotation
+    \draw[<->, successgreen!70!black, thick] (1.85,0) -- (1.85,0.55);
+    \node[right, successgreen!70!black, font=\footnotesize] at (1.9,0.27)
+      {$\sigma_2$};
+    \fill[black] (0,0) circle(1.5pt);
+    \node[font=\small, below] at (0,-1.65)
+      {\textit{Sau} $\boldsymbol{\Sigma}\mathbf{V}^T$};
+  \end{scope}
+
+  % Arrow label U
+  \draw[->, very thick, darkgray] (5.65,0) -- (6.55,0);
+  \node[above, darkgray, font=\footnotesize] at (6.1, 0.12)
+    {$\mathbf{U}$};
+
+  % Panel 3: Output space (rotated ellipse)
+  \begin{scope}[xshift=8.5cm]
+    \draw[warnorange!15, fill=warnorange!6, thick, warnorange, rotate=30]
+      (0,0) ellipse(1.6 and 0.55);
+    % Grid lines
+    \draw[gray!35, thin] (-1.9,0)--(1.9,0);
+    \draw[gray!35, thin] (0,-1.0)--(0,1.0);
+    % u1 at 30 deg, length = sigma_1 = 1.6
+    \draw[->, very thick, primaryblue] (0,0)
+      -- ({1.6*cos(30)},{1.6*sin(30)})
+      node[above right, primaryblue, font=\small] {$\sigma_1\mathbf{u}_1$};
+    % u2 at 120 deg, length = sigma_2 = 0.55
+    \draw[->, very thick, accentblue] (0,0)
+      -- ({0.55*cos(120)},{0.55*sin(120)})
+      node[above left, accentblue, font=\small] {$\sigma_2\mathbf{u}_2$};
+    \fill[black] (0,0) circle(1.5pt);
+    \node[font=\small, below] at (0,-1.65)
+      {\textit{Đầu ra}: $\mathbf{Ax}$};
+  \end{scope}
+\end{tikzpicture}
+\caption{Tính chất hình học của SVD trong $\R^2$: $\mat{A} = \mat{U}\boldsymbol{\Sigma}\mat{V}^T$
+biến đổi hình tròn đơn vị (trái, \textcolor{primaryblue}{xanh}) thành ellipse
+theo trục tọa độ (giữa, \textcolor{successgreen!70!black}{xanh lá}) bằng
+$\boldsymbol{\Sigma}\mat{V}^T$, rồi quay thành ellipse cuối (phải,
+\textcolor{warnorange}{cam}) bằng $\mat{U}$. Bán trục dài/ngắn là $\sigma_1$,
+$\sigma_2$ theo các hướng $\mat{u}_1$, $\mat{u}_2$.}
+\label{fig:svd_geometry}
+\end{figure}
+
+\subsubsection{Tính Chất Đại Số}
+
+\subsubsection{Rank và Các Không Gian Con}
+
+\begin{mythm}{Rank qua SVD}{}
+Cho $\mat{A} = \mat{U}\boldsymbol{\Sigma}\mat{V}^T$ với $r$ giá trị kỳ dị dương.
+Khi đó $\rank(\mat{A}) = r$ và:
+\begin{align*}
+    \col(\mat{A}) &= \spann\{\mat{u}_1, \ldots, \mat{u}_r\}, \\
+    \operatorname{null}(\mat{A}) &= \spann\{\mat{v}_{r+1}, \ldots, \mat{v}_n\}, \\
+    \operatorname{row}(\mat{A}) &= \spann\{\mat{v}_1, \ldots, \mat{v}_r\}, \\
+    \operatorname{null}(\mat{A}^T) &= \spann\{\mat{u}_{r+1}, \ldots, \mat{u}_m\}.
+\end{align*}
+\end{mythm}
+
+\begin{proof}
+Từ $\mat{A}\mat{v}_i = \sigma_i\mat{u}_i$ (với $\sigma_i > 0$ khi $i \leq r$ và
+$= 0$ khi $i > r$): các cột của $\mat{A}$ nằm trong $\spann\{\mat{u}_1,\ldots,\mat{u}_r\}$,
+và mỗi $\mat{u}_i$ ($i \leq r$) được biểu diễn qua cột của $\mat{A}$, nên
+$\col(\mat{A}) = \spann\{\mat{u}_1,\ldots,\mat{u}_r\}$, suy ra $\rank(\mat{A}) = r$.
+Tương tự cho các không gian còn lại.
+\end{proof}
+
+\subsubsection{Chuẩn Ma Trận}
+
+\begin{mythm}{Chuẩn spectral và Frobenius qua SVD}{svd_norms}
+Cho $\mat{A} = \mat{U}\boldsymbol{\Sigma}\mat{V}^T$ với $r$ giá trị kỳ dị dương:
+\[
+    \norm{\mat{A}}_2 = \sigma_1,
+    \qquad
+    \norm{\mat{A}}_F = \sqrt{\sigma_1^2 + \sigma_2^2 + \cdots + \sigma_r^2}.
+\]
+\end{mythm}
+
+\begin{proof}
+\textit{Chuẩn spectral:}
+$\norm{\mat{A}}_2 = \max_{\norm{\mat{x}}_2=1}\norm{\mat{A}\mat{x}}_2 =
+\max_{\norm{\mat{y}}_2=1}\norm{\boldsymbol{\Sigma}\mat{y}}_2$
+(đặt $\mat{y} = \mat{V}^T\mat{x}$, dùng tính bảo toàn chuẩn của $\mat{U}$ và $\mat{V}$).
+$\norm{\boldsymbol{\Sigma}\mat{y}}_2^2 = \sum_{i=1}^r \sigma_i^2 y_i^2 \leq \sigma_1^2\sum y_i^2
+= \sigma_1^2$, đẳng thức khi $\mat{y} = \mat{e}_1$. Suy ra $\norm{\mat{A}}_2 = \sigma_1$.
+
+\textit{Chuẩn Frobenius:}
+$\norm{\mat{A}}_F^2 = \operatorname{tr}(\mat{A}^T\mat{A}) =
+\operatorname{tr}(\mat{V}\boldsymbol{\Sigma}^T\boldsymbol{\Sigma}\mat{V}^T) =
+\operatorname{tr}(\boldsymbol{\Sigma}^T\boldsymbol{\Sigma}) = \sum_{i=1}^r \sigma_i^2$.
+\end{proof}
+
+\subsubsection{Dạng Tích Ngoài (Outer Product Form)}
+
+\begin{mythm}{Biểu diễn tổng tích ngoài}{}
+\[
+    \mat{A} = \sum_{i=1}^{r} \sigma_i\, \mat{u}_i\mat{v}_i^T.
+\]
+Đây là tổng $r$ ma trận hạng 1, mỗi ma trận đóng góp một ``lớp thông tin'' với trọng
+số $\sigma_i$.
+\end{mythm}
+
+\begin{proof}
+Từ $\mat{A} = \mat{U}_r\boldsymbol{\Sigma}_r\mat{V}_r^T$, khai triển theo định nghĩa
+tích ma trận theo cột:
+$\mat{U}_r\boldsymbol{\Sigma}_r = [\sigma_1\mat{u}_1 \mid \cdots \mid \sigma_r\mat{u}_r]$,
+và $(\mat{U}_r\boldsymbol{\Sigma}_r)\mat{V}_r^T = \sum_{i=1}^r \sigma_i\mat{u}_i\mat{v}_i^T$.
+\end{proof}
+
+\subsubsection{Giả Nghịch Đảo Moore--Penrose}
+
+\begin{mydef}{Giả nghịch đảo Moore--Penrose}{}
+Giả nghịch đảo (\textit{pseudoinverse}) của $\mat{A} = \mat{U}\boldsymbol{\Sigma}\mat{V}^T$
+là:
+\[
+    \mat{A}^+ = \mat{V}\,\boldsymbol{\Sigma}^+\,\mat{U}^T,
+\]
+trong đó $\boldsymbol{\Sigma}^+ \in \R^{n \times m}$ có
+$\Sigma^+_{ii} = 1/\sigma_i$ với $\sigma_i > 0$, và 0 ở các vị trí khác.
+Dạng tường minh: $\mat{A}^+ = \mat{V}_r\boldsymbol{\Sigma}_r^{-1}\mat{U}_r^T$.
+\end{mydef}
+
+$\mat{A}^+$ thỏa bốn điều kiện Moore--Penrose: $\mat{A}\mat{A}^+\mat{A} = \mat{A}$,
+$\mat{A}^+\mat{A}\mat{A}^+ = \mat{A}^+$, $(\mat{A}\mat{A}^+)^T = \mat{A}\mat{A}^+$,
+$(\mat{A}^+\mat{A})^T = \mat{A}^+\mat{A}$. Khi $\mat{A}$ vuông khả nghịch:
+$\mat{A}^+ = \mat{A}^{-1}$.
+
+\subsubsection{Ứng Dụng}
+
+\subsubsection{Xấp Xỉ Hạng Thấp --- Định Lý Eckart--Young}
+
+\subsubsubsection{Định Nghĩa Xấp Xỉ Hạng $k$}
+
+\begin{mydef}{Xấp xỉ hạng $k$ tốt nhất}{}
+Với $1 \leq k \leq r = \rank(\mat{A})$, định nghĩa:
+\[
+    \mat{A}_k \;=\; \sum_{i=1}^{k} \sigma_i\,\mat{u}_i\mat{v}_i^T
+    \;=\; \mat{U}_k\,\boldsymbol{\Sigma}_k\,\mat{V}_k^T,
+\]
+là ma trận hạng $k$ thu được bằng cách chỉ giữ lại $k$ số hạng lớn nhất trong
+dạng tích ngoài của $\mat{A}$.
+\end{mydef}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=1.0, >=Stealth]
+  % Axes
+  \draw[->, darkgray, thick] (-0.4, 0) -- (8.2, 0) node[right] {$i$};
+  \draw[->, darkgray, thick] (0, -0.2) -- (0, 4.0) node[above] {$\sigma_i$};
+
+  % Bars (decreasing singular values)
+  \foreach \i/\h/\clr in {
+      1/3.60/primaryblue,
+      2/2.90/primaryblue,
+      3/1.80/primaryblue,
+      4/0.75/black!45,
+      5/0.40/black!35,
+      6/0.20/black!28,
+      7/0.08/black!22}
+  {
+    \fill[\clr] (\i*1.0-0.35, 0) rectangle (\i*1.0+0.35, \h);
+    \draw[black!40] (\i*1.0-0.35, 0) rectangle (\i*1.0+0.35, \h);
+    \node[below, font=\footnotesize, black!60] at (\i*1.0, -0.05) {$\i$};
+  }
+
+  % Rank-k cutoff at k=3 (between bar 3 and bar 4)
+  \draw[warnorange, dashed, very thick] (3.5, -0.3) -- (3.5, 4.0);
+  \node[warnorange, font=\small, rotate=90, anchor=south] at (3.65, 1.5)
+    {Giữ lại $k=3$};
+
+  % Energy annotation
+  \draw[<->, successgreen!70!black, thick] (0.05, 3.75) -- (3.48, 3.75);
+  \node[successgreen!70!black, font=\footnotesize, above] at (1.75, 3.75)
+    {năng lượng giữ lại};
+  \draw[<->, accentblue, thick] (3.52, 3.75) -- (7.35, 3.75);
+  \node[accentblue, font=\footnotesize, above] at (5.4, 3.75)
+    {năng lượng bị loại};
+
+  % Sigma_k+1 label
+  \draw[warnorange, <-, thick] (4.0, 0.75) -- (5.2, 1.3);
+  \node[warnorange, font=\footnotesize, anchor=west] at (5.2, 1.3)
+    {$\sigma_{k+1}$ = sai số tối ưu};
+
+  % Axis labels
+  \node[darkgray, font=\small] at (4.0, -0.65) {Chỉ số $i$};
+\end{tikzpicture}
+\caption{Phổ giá trị kỳ dị của $\mat{A}$. Các thanh \textcolor{primaryblue}{xanh}
+($i \leq k=3$) là các thành phần được giữ lại trong xấp xỉ $\mat{A}_k$;
+các thanh \textcolor{darkgray!60}{xám} bị loại bỏ. Sai số xấp xỉ tốt nhất
+(chuẩn spectral) đúng bằng $\sigma_{k+1}$.}
+\label{fig:svd_spectrum}
+\end{figure}
+
+\subsubsubsection{Định Lý Eckart--Young--Mirsky}
+
+\begin{mythm}{Eckart--Young--Mirsky}{}
+Cho $\mat{A} \in \R^{m \times n}$ với $\rank(\mat{A}) = r > k$. Với chuẩn spectral
+và chuẩn Frobenius:
+\[
+    \min_{\substack{\mat{B} \in \R^{m \times n} \\ \rank(\mat{B}) \leq k}}
+    \norm{\mat{A} - \mat{B}}_2 = \norm{\mat{A} - \mat{A}_k}_2 = \sigma_{k+1},
+\]
+\[
+    \min_{\substack{\mat{B} \in \R^{m \times n} \\ \rank(\mat{B}) \leq k}}
+    \norm{\mat{A} - \mat{B}}_F = \norm{\mat{A} - \mat{A}_k}_F
+    = \sqrt{\sigma_{k+1}^2 + \cdots + \sigma_r^2}.
+\]
+Nghiệm tối ưu là $\mat{A}_k$ trong cả hai trường hợp~\cite{golub2013}.
+\end{mythm}
+
+\begin{proof}
+Chứng minh cho chuẩn spectral (trường hợp Frobenius tương tự).
+
+\medskip
+\noindent\textit{Phần 1: Tính sai số của $\mat{A} - \mat{A}_k$.}
+
+$\mat{A} - \mat{A}_k = \displaystyle\sum_{i=k+1}^{r}\sigma_i\mat{u}_i\mat{v}_i^T$
+là SVD của ma trận phần còn lại. Theo Định lý~\ref{thm:svd_norms}:
+$\norm{\mat{A} - \mat{A}_k}_2 = \sigma_{k+1}$.
+
+\medskip
+\noindent\textit{Phần 2: Mọi ma trận hạng $k$ đều có sai số $\geq \sigma_{k+1}$.}
+
+Giả sử $\mat{B}$ có $\rank(\mat{B}) \leq k$. Khi đó:
+\[
+    \dim\bigl(\operatorname{null}(\mat{B})\bigr) \geq n - k.
+\]
+Xét không gian con $\mathcal{W} = \spann\{\mat{v}_1, \ldots, \mat{v}_{k+1}\}$
+với $\dim(\mathcal{W}) = k+1$.
+
+Theo bất đẳng thức chiều:
+\[
+    \dim\bigl(\operatorname{null}(\mat{B}) \cap \mathcal{W}\bigr)
+    \geq \underbrace{(n-k)}_{\dim\operatorname{null}(\mat{B})}
+    + \underbrace{(k+1)}_{\dim\mathcal{W}} - n = 1.
+\]
+Suy ra tồn tại vectơ đơn vị $\mat{w} \in \operatorname{null}(\mat{B}) \cap \mathcal{W}$.
+Viết $\mat{w} = \sum_{i=1}^{k+1}\alpha_i\mat{v}_i$ với $\sum\alpha_i^2 = 1$.
+Vì $\mat{B}\mat{w} = \mat{0}$:
+\begin{align*}
+    \norm{\mat{A} - \mat{B}}_2
+    &\geq \norm{(\mat{A} - \mat{B})\mat{w}}_2
+    = \norm{\mat{A}\mat{w}}_2 \\
+    &= \left\|\sum_{i=1}^{k+1}\alpha_i\mat{A}\mat{v}_i\right\|_2
+    = \left\|\sum_{i=1}^{k+1}\alpha_i\sigma_i\mat{u}_i\right\|_2 \\
+    &= \sqrt{\sum_{i=1}^{k+1}\alpha_i^2\sigma_i^2}
+    \;\geq\; \sigma_{k+1}\sqrt{\sum_{i=1}^{k+1}\alpha_i^2}
+    = \sigma_{k+1}.
+\end{align*}
+Kết hợp hai phần: $\displaystyle\min_{\rank(\mat{B})\leq k}\norm{\mat{A}-\mat{B}}_2 = \sigma_{k+1}$,
+đạt được khi $\mat{B} = \mat{A}_k$.
+\end{proof}
+
+\begin{note}[Ý nghĩa thực tế]
+Định lý Eckart--Young cho biết: \textbf{không có ma trận hạng $k$ nào xấp xỉ $\mat{A}$
+tốt hơn $\mat{A}_k$} (theo cả chuẩn spectral lẫn Frobenius). Đây là cơ sở lý thuyết
+của nén ảnh, PCA, LSA (\textit{Latent Semantic Analysis}), và các phương pháp
+giảm chiều dữ liệu.
+\end{note}
+
+
+\subsubsection{Giải Hệ Bình Phương Tối Thiểu qua SVD}
+
+Xét bài toán $\min_{\mat{x}}\norm{\mat{A}\mat{x} - \mat{b}}_2$ với
+$\mat{A} \in \R^{m \times n}$, $\mat{b} \in \R^m$ tùy ý (không yêu cầu
+$\mat{A}$ có hạng đầy đủ cột).
+
+\begin{mythm}{Nghiệm qua giả nghịch đảo}{}
+Nghiệm bình phương tối thiểu có chuẩn nhỏ nhất là~\cite{strang2023}:
+\[
+    \hat{\mat{x}} = \mat{A}^+\mat{b}
+    = \mat{V}_r\boldsymbol{\Sigma}_r^{-1}\mat{U}_r^T\mat{b}
+    = \sum_{i=1}^{r} \frac{\inner{\mat{u}_i}{\mat{b}}}{\sigma_i}\,\mat{v}_i.
+\]
+\end{mythm}
+
+\begin{proof}[Ý tưởng chứng minh]
+Phân tích $\mat{b} = \mat{U}\mat{U}^T\mat{b}$ và dùng tính bảo toàn chuẩn:
+\begin{align*}
+    \norm{\mat{A}\mat{x} - \mat{b}}_2^2
+    &= \norm{\mat{U}\boldsymbol{\Sigma}\mat{V}^T\mat{x} - \mat{b}}_2^2
+    = \norm{\boldsymbol{\Sigma}\mat{V}^T\mat{x} - \mat{U}^T\mat{b}}_2^2.
+\end{align*}
+Đặt $\mat{y} = \mat{V}^T\mat{x}$ và $\mat{c} = \mat{U}^T\mat{b}$. Khai triển:
+\[
+    \norm{\boldsymbol{\Sigma}\mat{y} - \mat{c}}_2^2
+    = \sum_{i=1}^r(\sigma_i y_i - c_i)^2 + \sum_{i=r+1}^m c_i^2.
+\]
+Số hạng thứ hai không phụ thuộc $\mat{x}$. Cực tiểu hóa số hạng đầu: $y_i = c_i/\sigma_i$
+($i \leq r$), còn $y_i$ ($i > r$) tự do. Để $\norm{\mat{x}}_2$ nhỏ nhất, chọn $y_i = 0$
+($i > r$). Suy ra $\hat{\mat{x}} = \mat{V}\mat{y} = \mat{V}_r\boldsymbol{\Sigma}_r^{-1}\mat{U}_r^T\mat{b}$.
+\end{proof}
+
+\begin{table}[H]
+\centering
+\caption{Phân loại bài toán $\mat{A}\mat{x} = \mat{b}$ và nghiệm qua SVD}
+\label{tab:svd_cases}
+\renewcommand{\arraystretch}{1.7}
+\setlength{\tabcolsep}{5pt}
+\small
+\begin{tabular}{p{3.5cm}p{2.4cm}p{3.5cm}p{4.6cm}}
+\toprule
+\textbf{Loại hệ} & \textbf{Điều kiện} & \textbf{Nghiệm} &
+\textbf{Nghiệm $\hat{\mat{x}} = \mat{A}^+\mat{b}$} \\
+\midrule
+Chính xác, duy nhất
+  & $m = n,\; r = n$
+  & $\mat{x} = \mat{A}^{-1}\mat{b}$
+  & Nghiệm duy nhất \\[3pt]
+Dư thừa \newline\textit{(overdetermined)}
+  & $m > n,\; r = n$
+  & Không có nghiệm chính xác
+  & Nghiệm BPTT duy nhất \\[3pt]
+Thiếu ràng buộc \newline\textit{(underdetermined)}
+  & $m < n,\; r = m$
+  & Vô số nghiệm
+  & Nghiệm $\norm{\cdot}_2$ nhỏ nhất \\[3pt]
+Tổng quát
+  & $r < \min(m,n)$
+  & Vô số nghiệm BPTT
+  & Nghiệm BPTT có $\norm{\cdot}_2$ nhỏ nhất \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Phân Tích Thành Phần Chính (PCA)}
+
+Cho ma trận dữ liệu $\mat{X} \in \R^{n \times d}$ (n mẫu, d chiều), đã chuẩn hóa
+zero-mean. PCA tìm $k$ hướng biến thiên lớn nhất. Cách thực hiện qua SVD:
+
+\begin{enumerate}[noitemsep]
+    \item Tính SVD: $\mat{X} = \mat{U}\boldsymbol{\Sigma}\mat{V}^T$.
+    \item \textbf{Các thành phần chính} (\textit{principal components}):
+          $k$ cột đầu của $\mat{V}$, tức $\mat{v}_1, \ldots, \mat{v}_k$.
+    \item \textbf{Chiếu dữ liệu} xuống $k$ chiều: $\mat{Z} = \mat{X}\mat{V}_k \in \R^{n \times k}$.
+    \item \textbf{Phương sai giải thích} bởi thành phần $i$:
+          $\sigma_i^2 / \sum_{j=1}^r \sigma_j^2$.
+\end{enumerate}
+
+Mối liên hệ: SVD của $\mat{X}$ tương đương eigendecomposition của ma trận hiệp
+phương sai $\mat{X}^T\mat{X} = \mat{V}(\boldsymbol{\Sigma}^T\boldsymbol{\Sigma})\mat{V}^T$,
+nên $\mat{v}_i$ là các eigenvector của ma trận hiệp phương sai~\cite{higham2002}.
+
+\subsubsection{Kết Luận}
+
+Báo cáo đã trình bày đầy đủ lý thuyết phân rã SVD từ nền tảng đến ứng dụng.
+Các điểm cốt lõi:
+
+\begin{enumerate}
+    \item \textbf{Tính tổng quát:} SVD tồn tại với mọi $\mat{A} \in \R^{m \times n}$
+          và được xây dựng tường minh qua eigendecomposition của $\mat{A}^T\mat{A}$.
+          Các giá trị kỳ dị $\sigma_i$ là duy nhất và phản ánh đầy đủ cấu trúc của $\mat{A}$.
+
+    \item \textbf{Ý nghĩa hình học:} SVD phân tích $\mat{A}$ thành ba bước
+          \textit{quay -- co giãn -- quay}; hình cầu đơn vị biến thành hyperellipsoid
+          với bán trục $\sigma_i$ theo hướng $\mat{u}_i$.
+
+    \item \textbf{Tính chất đại số:} $\rank(\mat{A})$, chuẩn spectral, chuẩn Frobenius,
+          các không gian cơ bản, và giả nghịch đảo Moore--Penrose đều đọc trực tiếp
+          từ SVD.
+
+    \item \textbf{Định lý Eckart--Young:} $\mat{A}_k = \sum_{i=1}^k\sigma_i\mat{u}_i\mat{v}_i^T$
+          là xấp xỉ hạng $k$ tốt nhất của $\mat{A}$ theo cả chuẩn spectral lẫn
+          Frobenius, với sai số $\sigma_{k+1}$.
+
+    \item \textbf{Ứng dụng rộng rãi:} Giải bài toán bình phương tối thiểu cho mọi
+          loại hệ (overdetermined, underdetermined, rank-deficient); là nền tảng của
+          PCA, nén dữ liệu, xử lý ảnh và nhiều bài toán học máy.
+\end{enumerate}
+
+
